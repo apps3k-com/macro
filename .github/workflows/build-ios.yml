@@ -1,11 +1,11 @@
-name: Build Studio3000 iOS simulator pilot
+name: Build Studio3000 iOS device bundle
 on:
   push:
-    branches: [codex/ios-build]
+    branches: [codex/ios-device-build]
 permissions:
   contents: read
 jobs:
-  simulator:
+  device:
     runs-on: xcode-27
     timeout-minutes: 120
     steps:
@@ -34,17 +34,18 @@ jobs:
           export NIX_REMOTE=daemon
           nix --version
         shell: bash
-      - name: Compile unsigned iOS simulator application
+      - name: Compile unsigned iOS device application
         timeout-minutes: 100
         run: |
           set -euo pipefail
           xcodebuild -version
-          xcrun --sdk iphonesimulator --show-sdk-version
+          xcrun --sdk iphoneos --show-sdk-version
           MACRO_DEVELOPER_DIR="$(xcode-select -p)"
           export MACRO_DEVELOPER_DIR
+          export MACRO_DEVICE_CONFIG='{"build":{"beforeBuildCommand":"","frontendDist":"../../dist"}}'
 
           # cargo-tauri, bun, just, wasm-pack and the pinned toolchain (which carries
-          # aarch64-apple-ios-sim, see rust-toolchain.toml) all come from the dev shell.
+          # aarch64-apple-ios, see rust-toolchain.toml) all come from the dev shell.
           # Phase 1 — the web and wasm build, in the dev shell exactly as it comes. It
           # needs nix's bun, wasm-pack and cc wrapper, and must not see Apple's.
           nix develop --command bash -euo pipefail -c '
@@ -90,9 +91,10 @@ jobs:
             # line. Keep the whole build log and Xcode'"'"'s activity logs as artifacts.
             mkdir -p ../../artifacts
             log=../../artifacts/ios-build.log
-            bundle=tauri/src-tauri/gen/apple/build/arm64-sim/macro.app
+            bundle=tauri/src-tauri/gen/apple/build/arm64/macro.app
             test ! -e "$bundle"
-            just ios-build-sim true >"$log" 2>&1 &
+            just ios-prepare
+            (cd tauri/src-tauri && cargo tauri ios build --target aarch64 --ci --no-sign -v --config "$MACRO_DEVICE_CONFIG" -- --no-default-features) >"$log" 2>&1 &
             build_pid=$!
             while kill -0 "$build_pid" 2>/dev/null; do
               if test -s "$bundle/Info.plist" && grep -q "Finished .*1 iOS Bundle at:" "$log"; then
@@ -105,13 +107,18 @@ jobs:
             executable=$(/usr/libexec/PlistBuddy -c "Print CFBundleExecutable" "$bundle/Info.plist")
             test -x "$bundle/$executable"
             /usr/bin/lipo -verify_arch arm64 "$bundle/$executable"
-            echo "Verified newly built arm64 simulator executable."
+            echo "Verified newly built arm64 device executable."
           '
 
-          app="apps/web/tauri/src-tauri/gen/apple/build/arm64-sim/macro.app"
+          app="apps/web/tauri/src-tauri/gen/apple/build/arm64/macro.app"
           test -s "$app/Info.plist"
           test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$app/Info.plist")" = ch.studio3000.macro
-          ditto -c -k --keepParent "$app" "$RUNNER_TEMP/macro-simulator.zip"
+          executable=$(/usr/libexec/PlistBuddy -c 'Print CFBundleExecutable' "$app/Info.plist")
+          xcrun vtool -show-build "$app/$executable" | grep -E 'platform IOS$'
+          for plugin in ShareExtension NotificationServiceExtension; do
+            /usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$app/PlugIns/$plugin.appex/Info.plist" | grep -Fx "ch.studio3000.macro.$plugin"
+          done
+          ditto -c -k --keepParent "$app" "$RUNNER_TEMP/macro-device.zip"
       - name: Preserve Xcode diagnostics after a build failure
         if: failure() || cancelled()
         run: |
@@ -123,27 +130,10 @@ jobs:
           name: studio3000-ios-build-diagnostics
           path: artifacts/
           retention-days: 3
-      - name: Preserve the verified simulator bundle
+      - name: Preserve the verified device bundle
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: studio3000-ios-simulator
-          path: ${{ runner.temp }}/macro-simulator.zip
-          if-no-files-found: error
-          retention-days: 3
-      - name: Launch the compiled application in an iPhone simulator
-        run: |
-          set -euo pipefail
-          udid=$(xcrun simctl list devices available --json | python3 -c 'import json,sys; groups=json.load(sys.stdin)["devices"]; print(next(d["udid"] for k,devices in sorted(groups.items(),reverse=True) if "iOS-27" in k for d in devices if d["name"].startswith("iPhone") and d["isAvailable"]))')
-          xcrun simctl bootstatus "$udid" -b
-          app="apps/web/tauri/src-tauri/gen/apple/build/arm64-sim/macro.app"
-          xcrun simctl install "$udid" "$app"
-          xcrun simctl launch "$udid" ch.studio3000.macro
-          sleep 15
-          xcrun simctl spawn "$udid" launchctl list | awk '$1 ~ /^[0-9]+$/ && /ch[.]studio3000[.]macro/ {found=1} END{exit !found}'
-          xcrun simctl io "$udid" screenshot --display=internal "$RUNNER_TEMP/ios-launch.png"
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
-        with:
-          name: studio3000-ios-launch
-          path: ${{ runner.temp }}/ios-launch.png
+          name: studio3000-ios-device
+          path: ${{ runner.temp }}/macro-device.zip
           if-no-files-found: error
           retention-days: 3

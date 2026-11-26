@@ -1,7 +1,7 @@
 name: Build Studio3000 workspace services
 on:
   push:
-    branches: [codex/document-object-build]
+    branches: [codex/document-finalizer-build]
   workflow_dispatch:
 permissions:
   contents: read
@@ -10,12 +10,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [document_storage_service]
+        service: [document_upload_finalizer_local_worker]
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     env:
       SERVICE: ${{ matrix.service }}
-      SOURCE_COMMIT: a28a7af4883d45cca71e274cb6e7d175b51642d0
+      SOURCE_COMMIT: f64be4e3844c25ee55a8dea8e2b404a3e7eb5f22
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:

@@ -1,3 +1,4 @@
+mod read_access;
 pub mod bulk_delete_file;
 pub mod delete_file;
 pub mod get_file;

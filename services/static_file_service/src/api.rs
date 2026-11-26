@@ -52,7 +52,19 @@ pub async fn setup_and_serve(
         macro_authorization::NoUserApiKeyAuthorizer,
     )));
 
+    let file_access_db = match std::env::var("STATIC_FILE_ACCESS_DATABASE_URL") {
+        Ok(url) => Some(
+            sqlx::postgres::PgPoolOptions::new()
+                .max_connections(4)
+                .connect(&url)
+                .await
+                .context("connect to static-file access database")?,
+        ),
+        Err(std::env::VarError::NotPresent) => None,
+        Err(error) => return Err(error.into()),
+    };
     let state = AppState {
+        file_access_db,
         metadata_client,
         storage_client: Arc::new(storage_client),
         sqs_client,

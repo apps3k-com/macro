@@ -14,6 +14,7 @@ pub(crate) type AuthorizationService = MacroAuthorizationServiceImpl<MacroAuthJw
 
 #[derive(Clone, FromRef)]
 pub struct AppState {
+    pub file_access_db: Option<sqlx::PgPool>,
     pub metadata_client: DynamodbClient,
     pub storage_client: Arc<S3Client>,
     pub sqs_client: Client,

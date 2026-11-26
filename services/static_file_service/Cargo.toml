@@ -47,6 +47,7 @@ s3_key = { path = "../../crates/s3_key" }
 secretsmanager_client = { path = "../../crates/secretsmanager_client" }
 serde = { workspace = true }
 serde_dynamo = { workspace = true }
+sqlx.workspace = true
 serde_json = { workspace = true }
 strum_macros = { workspace = true }
 thiserror = { workspace = true }

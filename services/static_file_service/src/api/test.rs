@@ -36,6 +36,7 @@ fn service() -> Router {
         internal_api_key: InternalApiKey::Comptime("internal"),
     };
     let state = AppState {
+        file_access_db: None,
         metadata_client: DynamodbClient::new(&aws, "files".to_owned()),
         storage_client: Arc::new(S3Client::new(
             aws_sdk_s3::Client::new(&aws),

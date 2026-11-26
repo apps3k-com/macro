@@ -222,6 +222,9 @@ pub struct Config {
     ///
     /// All `@macro.com` email addresses are allowed by the Develop policy automatically.
     pub development_signup_allowlist_json: DevelopmentSignupAllowlistJson,
+    /// Require an addressed team invitation in the private pilot as in Studio production.
+    #[macro_config_default(false)]
+    pub require_team_invite: bool,
     /// Whether Develop allows every public signup without reading
     /// `DEVELOPMENT_SIGNUP_ALLOWLIST_JSON`. Production and Local ignore it.
     #[macro_config_default(false)]

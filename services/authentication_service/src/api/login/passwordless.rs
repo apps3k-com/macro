@@ -111,6 +111,7 @@ pub async fn handler(
         Err(e) => match e {
             FusionAuthClientError::UserDoesNotExist => {
                 tracing::trace!(email=%lowercase_email, "user does not exist, we need to create user");
+                crate::api::signup_policy::require_invited_signup(&ctx, &lowercase_email).await?;
                 ctx.signup_policy
                         .authorize_public_email(&lowercase_email)
                         .map_err(|denial| {

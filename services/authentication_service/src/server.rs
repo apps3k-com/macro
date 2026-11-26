@@ -1028,6 +1028,8 @@ async fn run_server() -> anyhow::Result<()> {
             sqs_client,
             environment: config.environment,
             signup_policy,
+            require_team_invite: config.require_team_invite
+                || matches!(config.environment, macro_env::Environment::Production),
             rate_limit_service: rate_limit,
             event_broker: macro_event_broker.clone(),
             calendar_scope_enabled: config.calendar_scope_enabled,

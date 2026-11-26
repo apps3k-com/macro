@@ -149,6 +149,7 @@ pub async fn handler(
             })?;
         }
         "user.create" => {
+            crate::api::signup_policy::require_invited_signup(&ctx, &req.event.user.email).await?;
             dispatch_user_create_webhook(&ctx.signup_policy, req, |req| {
                 create_user_webhook(&ctx, req)
             })
@@ -575,6 +576,14 @@ fn spawn_domain_team_join(ctx: &ApiContext, user_id: &str) {
 /// Marketing and sample content for a person's new account. Fire-and-forget:
 /// none of it may block signing in.
 fn spawn_human_signup_content(ctx: &ApiContext, user_id: &str, email: &str) {
+    if ctx.require_team_invite {
+        // Studio teams seed local documents without enrolling users in vendor
+        // marketing or adding vendor accounts to a new support channel.
+        let client = ctx.document_storage_service_client.clone();
+        let user = user_id.to_owned();
+        tokio::spawn(async move { initialize_starter_docs_with_retries(&client, &user).await });
+        return;
+    }
     let support_channel_name = match Email::parse_from_str(email) {
         Ok(email) => support_channel_name(&email),
         Err(e) => {

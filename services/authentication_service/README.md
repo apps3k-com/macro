@@ -184,3 +184,15 @@ cargo fmt --check
 Review this README and related logs before rollout to confirm they contain only
 placeholders or reserved synthetic examples, never operational email addresses
 or copied Doppler values.
+
+## Studio3000 private registration
+
+Studio production additionally requires a pending, email-addressed Macro team
+invitation for each new identity. Enable the same behavior on a private Local
+pilot with `REQUIRE_TEAM_INVITE=true`. Both passwordless initiation for new
+addresses and the transactional FusionAuth user-create webhook check the team
+invitation. A team owner can revoke an unused invitation from the team settings.
+Pre-provision the first team owner while bootstrapping on isolated infrastructure.
+Existing users can continue signing in after accepting their invitation. In this
+mode new users receive local starter documents and skip the vendor support
+channel and Loops welcome sequence.

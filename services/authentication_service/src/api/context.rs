@@ -311,6 +311,7 @@ pub(crate) struct ApiContext {
     pub sqs_client: Arc<sqs_client::SQS>,
     pub environment: Environment,
     pub signup_policy: Arc<SignupPolicy>,
+    pub require_team_invite: bool,
     pub jwt_args: JwtValidationArgs,
     pub authorization_state: MacroAuthorizationState<AuthorizationService>,
     pub token_context: MacroApiTokenContext,

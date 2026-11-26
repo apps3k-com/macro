@@ -26,10 +26,15 @@ const serverHostLocal: Servers = {
 
 const devServerSuffix = import.meta.env.MODE === 'development' ? '-dev' : '';
 
+// Native clients use an OS-specific page origin. Keep their API origin fixed.
+const studioOrigin = 'https://macro.studio3000.ch';
+const studioWsOrigin = 'wss://macro.studio3000.ch';
+const studioBuild = import.meta.env.MODE === 'production';
+
 const gatewayHost =
   import.meta.env.MODE === 'development'
     ? 'https://dev-gateway.macro.com'
-    : 'https://gateway.macro.com';
+    : studioBuild ? studioOrigin : 'https://gateway.macro.com';
 
 const authLogoutUrl =
   import.meta.env.MODE === 'development'
@@ -55,6 +60,12 @@ const directServerHostRemote = {
   'agent-harness': `${gatewayHost}/agent-harness`,
   preview: `${gatewayHost}/preview`,
   'agent-git': `${gatewayHost}/agent-git`,
+  ...(studioBuild && {
+    'auth-logout': `${studioOrigin}/identity/logout`,
+    'pdf-service': `${studioOrigin}/pdf`,
+    'websocket-service': `${studioWsOrigin}/websocket`,
+    'static-file': `${studioOrigin}/static-file`,
+  }),
 } as const;
 
 type Servers = Record<keyof typeof directServerHostRemote, string>;
@@ -206,6 +217,9 @@ function selectSyncServiceHost():
   | typeof syncServiceHostRemote
   | typeof syncServiceHostLocal
   | { worker: string; ws: string } {
+  if (studioBuild) {
+    return { worker: `${studioOrigin}/sync`, ws: `${studioWsOrigin}/sync` };
+  }
   const overrideHost: string | undefined = import.meta.env
     .VITE_SYNC_SERVICE_HOST;
   if (overrideHost) {

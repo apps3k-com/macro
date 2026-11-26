@@ -123,3 +123,20 @@ it.each([
     expect(usesLocalStackProxy()).toBe(expected);
   }
 );
+
+it('routes production web and native API sessions to Studio3000', async () => {
+  vi.stubEnv('MODE', 'production');
+  vi.stubGlobal('location', new URL('https://tauri.localhost'));
+  vi.resetModules();
+  const { SERVER_HOSTS, SYNC_SERVICE_HOSTS, NATIVE_SESSION_SERVICE_URLS } =
+    await import('./servers');
+
+  for (const endpoint of [
+    ...Object.values(SERVER_HOSTS),
+    ...Object.values(SYNC_SERVICE_HOSTS),
+    ...NATIVE_SESSION_SERVICE_URLS,
+  ]) {
+    expect(new URL(endpoint).hostname).toBe('macro.studio3000.ch');
+  }
+  expect(SYNC_SERVICE_HOSTS.ws).toBe('wss://macro.studio3000.ch/sync');
+});

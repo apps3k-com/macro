@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     env:
-      SOURCE_COMMIT: 4abfa017e0e042b5e47470c6e09293ed72f322fe
+      SOURCE_COMMIT: 8d042f66eab84cde33170a77c494bd6dd678dcfa
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:

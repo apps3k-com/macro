@@ -19,6 +19,10 @@ function cleanHostname(hostname: string): string {
 }
 
 export function isValidMacroAppHostname(hostname: string): boolean {
+  if (import.meta.env.MODE === 'production' && isTauri()) {
+    return hostname.toLowerCase() === 'macro.studio3000.ch' ||
+      hostname.toLowerCase() === window.location.hostname.toLowerCase();
+  }
   const current = cleanHostname(window.location.hostname);
   const target = cleanHostname(hostname);
   if (current === target) {

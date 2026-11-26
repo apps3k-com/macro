@@ -8,6 +8,7 @@ vi.mock('@core/util/platform', () => ({
 
 afterEach(() => {
   vi.mocked(isTauri).mockReturnValue(false);
+  vi.unstubAllEnvs();
 });
 
 // jsdom's window.location.hostname is 'localhost', which
@@ -117,4 +118,15 @@ describe('parseInternalAppLink', () => {
     expect(parseInternalAppLink('not a url')).toBeNull();
     expect(parseInternalAppLink('/app/component/abc')).toBeNull();
   });
+});
+
+
+it('opens Studio3000 shared links inside the release app', () => {
+  vi.stubEnv('MODE', 'production');
+  vi.mocked(isTauri).mockReturnValue(true);
+  expect(parseInternalAppLink('https://macro.studio3000.ch/app/channel/abc')).toEqual({
+    path: '/channel/abc',
+    query: '',
+  });
+  expect(parseInternalAppLink('https://macro.com/app/channel/abc')).toBeNull();
 });

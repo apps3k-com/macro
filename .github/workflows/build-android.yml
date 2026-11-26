@@ -1,0 +1,52 @@
+name: Build Studio3000 Android pilot
+on:
+  push:
+    branches: [codex/android-build]
+permissions:
+  contents: read
+jobs:
+  android:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: 7c6875785860294bac5f3ffc16aa88576a4cdfd2
+          persist-credentials: false
+      - name: Install the pinned Android SDK and NDK
+        shell: bash
+        run: |
+          set -euo pipefail
+          sudo rm -rf /usr/share/dotnet /opt/ghc /opt/hostedtoolcache/CodeQL
+          export JAVA_HOME="$JAVA_HOME_21_X64"
+          export PATH="$JAVA_HOME/bin:$PATH"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" 'platforms;android-36' 'build-tools;36.0.0' 'ndk;30.0.16248370'
+          echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
+          echo "NDK_HOME=$ANDROID_HOME/ndk/30.0.16248370" >> "$GITHUB_ENV"
+      - uses: ./.github/actions/setup-nix
+      - uses: ./.github/actions/setup-reqs-web
+      - name: Test Android configuration and compile the ARM64 debug client
+        working-directory: apps/web
+        run: |
+          set -euo pipefail
+          unset BASH_ENV
+          export RUSTC_WRAPPER=""
+          bunx --no-install vitest run scripts/android-firebase.test.ts scripts/android-play-status.test.ts
+          args=(--apk)
+          if [[ "$(cargo tauri android build --help)" == *'--apk <APK>'* ]]; then
+            args=(--apk true --aab false)
+          fi
+          just android-build --debug --ci "${args[@]}"
+          mapfile -t apks < <(find tauri/src-tauri/gen/android/app/build/outputs/apk -name '*-debug.apk')
+          [[ ${#apks[@]} == 1 ]]
+          aapt="$ANDROID_HOME/build-tools/36.0.0/aapt"
+          "$aapt" dump badging "${apks[0]}" > "$RUNNER_TEMP/android-badging"
+          grep -F "package: name='ch.studio3000.macro'" "$RUNNER_TEMP/android-badging"
+          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify "${apks[0]}"
+          cp "${apks[0]}" "$RUNNER_TEMP/studio3000-debug.apk"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: studio3000-android-debug
+          path: ${{ runner.temp }}/studio3000-debug.apk
+          if-no-files-found: error
+          retention-days: 3

@@ -1,0 +1,43 @@
+name: Build Studio3000 workspace services
+on:
+  push:
+    branches: [codex/workspace-build]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [connection_gateway_service, static_file_service, document_storage_service]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      SERVICE: ${{ matrix.service }}
+      SOURCE_COMMIT: 7c6875785860294bac5f3ffc16aa88576a4cdfd2
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ env.SOURCE_COMMIT }}
+          persist-credentials: false
+      - name: Free space on the disposable Linux runner
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+      - name: Build Linux image
+        run: |
+          set -eu
+          docker build -f docker/Dockerfile --build-arg SERVICE_NAME="$SERVICE" \
+            --label org.opencontainers.image.revision="$SOURCE_COMMIT" \
+            -t "macro-studio/$SERVICE:$SOURCE_COMMIT" .
+          docker image save "macro-studio/$SERVICE:$SOURCE_COMMIT" | gzip -1 > "$RUNNER_TEMP/macro-service.tar.gz"
+          cd "$RUNNER_TEMP"
+          sha256sum macro-service.tar.gz > macro-service.tar.gz.sha256
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: studio-${{ matrix.service }}-linux-amd64
+          path: |
+            ${{ runner.temp }}/macro-service.tar.gz
+            ${{ runner.temp }}/macro-service.tar.gz.sha256
+          retention-days: 3
+          compression-level: 0
+          if-no-files-found: error

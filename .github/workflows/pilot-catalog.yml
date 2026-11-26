@@ -23,9 +23,10 @@ jobs:
           fn export_studio_pilot_catalog() {
               use std::collections::BTreeMap;
               let mut bindings = BTreeMap::new();
-              let mut queues = Vec::new();
+              let mut queues = BTreeMap::new();
               for queue in QUEUES {
-                  queues.push(queue.name);
+                  let attrs: BTreeMap<_,_> = queue.attributes().into_iter().map(|(k,v)| (k.as_str().to_owned(),v)).collect();
+                  queues.insert(queue.name, attrs);
                   for (key, form) in queue.bindings {
                       bindings.insert(*key, form.value(queue.name));
                   }

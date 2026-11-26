@@ -344,15 +344,15 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					017A206CDE07C3F290D7A4FA = {
-						DevelopmentTeam = TY74Q77JBD;
+						DevelopmentTeam = "$(STUDIO3000_APPLE_TEAM_ID)";
 						ProvisioningStyle = Automatic;
 					};
 					097A73617A3B881FE560AF51 = {
-						DevelopmentTeam = TY74Q77JBD;
+						DevelopmentTeam = "$(STUDIO3000_APPLE_TEAM_ID)";
 						ProvisioningStyle = Automatic;
 					};
 					E86255CB8A1836C0BF0C0E14 = {
-						DevelopmentTeam = TY74Q77JBD;
+						DevelopmentTeam = "$(STUDIO3000_APPLE_TEAM_ID)";
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -467,7 +467,7 @@
 				);
 				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = TY74Q77JBD;
+				DEVELOPMENT_TEAM = "$(STUDIO3000_APPLE_TEAM_ID)";
 				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
 				INFOPLIST_FILE = NotificationServiceExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -475,7 +475,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.macro.app.prod.NotificationServiceExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = ch.studio3000.macro.NotificationServiceExtension;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALID_ARCHS = arm64;
@@ -494,7 +494,7 @@
 				CODE_SIGN_ENTITLEMENTS = app_iOS/app_iOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = TY74Q77JBD;
+				DEVELOPMENT_TEAM = "$(STUDIO3000_APPLE_TEAM_ID)";
 				ENABLE_BITCODE = NO;
 				ENABLE_DEBUG_DYLIB = NO;
 				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
@@ -511,7 +511,7 @@
 				);
 				"LIBRARY_SEARCH_PATHS[arch=arm64]" = "$(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)";
 				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = "$(inherited) $(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)";
-				PRODUCT_BUNDLE_IDENTIFIER = com.macro.app.prod;
+				PRODUCT_BUNDLE_IDENTIFIER = ch.studio3000.macro;
 				PRODUCT_NAME = "macro";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -528,7 +528,7 @@
 				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
 				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = TY74Q77JBD;
+				DEVELOPMENT_TEAM = "$(STUDIO3000_APPLE_TEAM_ID)";
 				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
 				INFOPLIST_FILE = ShareExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -536,7 +536,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.macro.app.prod.ShareExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = ch.studio3000.macro.ShareExtension;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALID_ARCHS = arm64;
@@ -611,7 +611,7 @@
 				CODE_SIGN_ENTITLEMENTS = app_iOS/app_iOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = TY74Q77JBD;
+				DEVELOPMENT_TEAM = "$(STUDIO3000_APPLE_TEAM_ID)";
 				ENABLE_BITCODE = NO;
 				ENABLE_DEBUG_DYLIB = NO;
 				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
@@ -628,7 +628,7 @@
 				);
 				"LIBRARY_SEARCH_PATHS[arch=arm64]" = "$(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)";
 				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = "$(inherited) $(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)";
-				PRODUCT_BUNDLE_IDENTIFIER = com.macro.app.prod;
+				PRODUCT_BUNDLE_IDENTIFIER = ch.studio3000.macro;
 				PRODUCT_NAME = "macro";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -645,7 +645,7 @@
 				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
 				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = TY74Q77JBD;
+				DEVELOPMENT_TEAM = "$(STUDIO3000_APPLE_TEAM_ID)";
 				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
 				INFOPLIST_FILE = ShareExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -653,7 +653,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.macro.app.prod.ShareExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = ch.studio3000.macro.ShareExtension;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALID_ARCHS = arm64;
@@ -668,7 +668,7 @@
 				);
 				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = TY74Q77JBD;
+				DEVELOPMENT_TEAM = "$(STUDIO3000_APPLE_TEAM_ID)";
 				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
 				INFOPLIST_FILE = NotificationServiceExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -676,7 +676,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.macro.app.prod.NotificationServiceExtension;
+				PRODUCT_BUNDLE_IDENTIFIER = ch.studio3000.macro.NotificationServiceExtension;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALID_ARCHS = arm64;

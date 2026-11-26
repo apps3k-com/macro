@@ -73,7 +73,7 @@ impl AppEnvironment {
     fn auth_service_url(self) -> &'static str {
         match self {
             Self::Development => "https://dev-gateway.macro.com/auth/",
-            Self::Production => "https://gateway.macro.com/auth/",
+            Self::Production => "https://macro.studio3000.ch/auth/",
         }
     }
 
@@ -86,7 +86,7 @@ impl AppEnvironment {
     fn web_origin(self) -> &'static str {
         match self {
             Self::Development => "https://dev.macro.com",
-            Self::Production => "https://macro.com",
+            Self::Production => "https://macro.studio3000.ch",
         }
     }
 }
@@ -147,7 +147,7 @@ static ALLOWED_DOMAINS: &[&str] = &[
 /// these are routed through the SPA router instead of loading the remote
 /// site in the webview. Keep in parity with the deep-link hosts in
 /// tauri.conf.json.
-static APP_LINK_HOSTS: &[&str] = &["macro.com", "dev.macro.com", "staging.macro.com"];
+static APP_LINK_HOSTS: &[&str] = &["macro.studio3000.ch"];
 
 /// The navigation policy of every webview the app opens.
 fn navigation_plugin() -> MacroNavigationPlugin {
@@ -211,7 +211,7 @@ pub fn run_with(builder: tauri::Builder<AppRuntime>, configure_window: Configure
 
     #[cfg(target_os = "ios")]
     let registry = registry.with(tracing_oslog::OsLogger::new(
-        "com.macro.app.prod",
+        "ch.studio3000.macro",
         "default",
     ));
 
@@ -661,7 +661,7 @@ fn merge_header_callback<R: Runtime>(url: String, headers: &mut HeaderMap, handl
     // Origin for auth, so set it to our web origin unconditionally — independent of
     // whether cookie state is available.
     match parsed_url.host_str() {
-        Some("services.macro.com")
+        Some("macro.studio3000.ch")
         | Some("services-dev.macro.com")
         | Some("macroverse.workers.dev") => {
             headers.insert(

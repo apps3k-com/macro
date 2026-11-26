@@ -22,7 +22,7 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|fontScale|density|layoutDirection|navigation"
             android:launchMode="singleTask"
             android:label="@string/main_activity_title"
-            android:name=".MainActivity"
+            android:name="ch.studio3000.macro.MainActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize"
             android:supportsPictureInPicture="true"
@@ -55,31 +55,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" />
                 <data android:scheme="http" />
-                <data android:host="macro.com" />
-                <data android:path="/app" />
-                
-                <data android:pathPrefix="/app/" />
-                
-            </intent-filter>
-            <intent-filter android:autoVerify="true" >
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" />
-                <data android:scheme="http" />
-                <data android:host="dev.macro.com" />
-                <data android:path="/app" />
-                
-                <data android:pathPrefix="/app/" />
-                
-            </intent-filter>
-            <intent-filter android:autoVerify="true" >
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" />
-                <data android:scheme="http" />
-                <data android:host="staging.macro.com" />
+                <data android:host="macro.studio3000.ch" />
                 <data android:path="/app" />
                 
                 <data android:pathPrefix="/app/" />

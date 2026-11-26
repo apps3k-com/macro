@@ -1,6 +1,6 @@
 name: app
 options:
-  bundleIdPrefix: com.macro.app.prod
+  bundleIdPrefix: ch.studio3000.macro
   deploymentTarget:
     iOS: 15.0
 packages:
@@ -14,8 +14,8 @@ settingGroups:
   app:
     base:
       PRODUCT_NAME: macro
-      PRODUCT_BUNDLE_IDENTIFIER: com.macro.app.prod
-      DEVELOPMENT_TEAM: TY74Q77JBD
+      PRODUCT_BUNDLE_IDENTIFIER: ch.studio3000.macro
+      DEVELOPMENT_TEAM: $(STUDIO3000_APPLE_TEAM_ID)
       CODE_SIGN_STYLE: Automatic
       CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION: YES
 targetTemplates:
@@ -91,13 +91,11 @@ targets:
       properties:
         aps-environment: production
         com.apple.developer.associated-domains:
-          - applinks:macro.com
-          - applinks:dev.macro.com
-          - applinks:staging.macro.com
+          - applinks:macro.studio3000.ch
         com.apple.developer.usernotifications.communication: true
         com.apple.developer.usernotifications.time-sensitive: true
         com.apple.security.application-groups:
-          - group.com.macro.app.prod
+          - group.ch.studio3000.macro
     scheme:
       environmentVariables:
         RUST_BACKTRACE: full
@@ -163,11 +161,11 @@ targets:
       path: ShareExtension/ShareExtension.entitlements
       properties:
         com.apple.security.application-groups:
-          - group.com.macro.app.prod
+          - group.ch.studio3000.macro
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.macro.app.prod.ShareExtension
-        DEVELOPMENT_TEAM: TY74Q77JBD
+        PRODUCT_BUNDLE_IDENTIFIER: ch.studio3000.macro.ShareExtension
+        DEVELOPMENT_TEAM: $(STUDIO3000_APPLE_TEAM_ID)
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION: YES
         ARCHS: [arm64]
@@ -189,8 +187,8 @@ targets:
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).NotificationService
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.macro.app.prod.NotificationServiceExtension
-        DEVELOPMENT_TEAM: TY74Q77JBD
+        PRODUCT_BUNDLE_IDENTIFIER: ch.studio3000.macro.NotificationServiceExtension
+        DEVELOPMENT_TEAM: $(STUDIO3000_APPLE_TEAM_ID)
         CODE_SIGN_STYLE: Automatic
         CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION: YES
         ARCHS: [arm64]

@@ -94,6 +94,8 @@ jobs:
             bundle=tauri/src-tauri/gen/apple/build/arm64/macro.app
             test ! -e "$bundle"
             just ios-prepare
+            # Match the Xcode Rust build phase so both Tauri processes share the IPC address.
+            export TMPDIR="$(/usr/bin/getconf DARWIN_USER_TEMP_DIR)"
             (cd tauri/src-tauri && cargo tauri ios build --target aarch64 --ci --no-sign -v --config "$MACRO_DEVICE_CONFIG" -- --no-default-features) >"$log" 2>&1 &
             build_pid=$!
             while kill -0 "$build_pid" 2>/dev/null; do

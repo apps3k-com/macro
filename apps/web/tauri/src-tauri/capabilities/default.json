@@ -9,6 +9,9 @@
       "identifier": "http:default",
       "allow": [
         {
+          "url": "https://macro.studio3000.ch"
+        },
+        {
           "url": "https://*.macro.com"
         },
         {

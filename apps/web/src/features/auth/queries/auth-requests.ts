@@ -4,11 +4,12 @@ import {
 } from '@app/lib/analytics/metaClickIds';
 import { SERVER_HOSTS } from '@core/constant/servers';
 import { platformFetch } from '@core/util/platformFetch';
+import { getWebOrigin } from '@core/util/webOrigin';
 import { authServiceClient } from '@service-auth/client';
 import type { SendCodeResult, VerifyCodeResult } from '../context/auth-context';
 
 /** Where the passwordless magic link returns. */
-const REDIRECT_URI = `${window.location.origin}/app`;
+const REDIRECT_URI = `${getWebOrigin()}/app`;
 
 /** The one account that signs in with a password instead of a code. */
 const PASSWORD_LOGIN_EMAIL_SHA256 =

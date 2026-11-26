@@ -16,7 +16,9 @@
 # backend service build contexts. The lexical service has a Dockerfile-specific
 # ignore file because it installs the root JavaScript workspace.
 /apps
-/packages
+/packages/*
+# authentication_service embeds the starter template through crates/agent_git/build.rs.
+!/packages/starter-agent
 
 # Secrets and local configuration
 .env

@@ -75,6 +75,8 @@ maybe_env_vars! {
     pub struct PasswordsJwtSigningKey;
     /// Rollout gate for entities owned by bots or teams.
     pub struct EnableNonUserOwners;
+    /// Client-facing signaling URL when LiveKit administration uses a private address.
+    pub struct LivekitClientUrl;
     /// Optional name of the LiveKit agent to dispatch for call transcription.
     pub struct LivekitTranscriptionAgentName;
     /// Shared secret for internal call endpoints (e.g. transcript ingestion from the agent).

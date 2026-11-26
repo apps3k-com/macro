@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [connection_gateway_service, static_file_service, document_storage_service]
+        service: [document_storage_service, notification_service, email_service, calendar_service]
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     env:
@@ -23,6 +23,15 @@ jobs:
           persist-credentials: false
       - name: Free space on the disposable Linux runner
         run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+      - uses: ./.github/actions/setup-nix
+      - name: Generate the SDK assets embedded by workspace services
+        run: |
+          set -euo pipefail
+          nix build .#code-mode-assets --out-link "$RUNNER_TEMP/code-mode-assets"
+          mkdir -p studio-code-mode-assets
+          cp -RL "$RUNNER_TEMP/code-mode-assets/." studio-code-mode-assets/
+          test -n "$(ls -A studio-code-mode-assets)"
+          sed -i '/^# Build the service/i ENV CODE_MODE_ASSETS_DIR=/app/studio-code-mode-assets' docker/Dockerfile
       - name: Build Linux image
         run: |
           set -eu

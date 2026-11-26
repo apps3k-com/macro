@@ -25,9 +25,9 @@ jobs:
           sudo rm -rf /usr/share/dotnet /opt/ghc /opt/hostedtoolcache/CodeQL
           df -h "$HOME"
           sudo chmod 666 /dev/kvm
-          emulator -accel-check
           image='system-images;android-35;google_apis;x86_64'
           sdkmanager "$image" emulator platform-tools
+          emulator -accel-check
           avdmanager create avd -f -n studio -k "$image" --device pixel_6 </dev/null
           emulator -avd studio -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect > "$RUNNER_TEMP/emulator.log" 2>&1 &
           trap 'adb emu kill >/dev/null 2>&1 || true' EXIT

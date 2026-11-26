@@ -1,0 +1,73 @@
+name: Launch Studio3000 Android pilot
+on:
+  push:
+    branches: [codex/android-device]
+permissions:
+  actions: read
+  contents: read
+jobs:
+  launch:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - name: Verify and unpack the compiled ARM64 pilot
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh api repos/apps3k-com/macro/actions/artifacts/15104796747/zip > pilot.zip
+          echo "6c3e54bbb165be32dc60d772559b5b91e3d543e35e3a0c6f2c08157b218b123a  pilot.zip" | sha256sum -c
+          unzip -q pilot.zip
+      - name: Boot Android and exercise the installed application
+        timeout-minutes: 30
+        run: |
+          set -euo pipefail
+          export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$ANDROID_HOME/cmdline-tools/latest/bin:$PATH"
+          sudo chmod 666 /dev/kvm
+          image='system-images;android-35;google_apis;x86_64'
+          sdkmanager "$image" emulator platform-tools
+          echo no | avdmanager create avd -f -n studio -k "$image"
+          emulator -avd studio -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect > "$RUNNER_TEMP/emulator.log" 2>&1 &
+          trap 'adb emu kill >/dev/null 2>&1 || true' EXIT
+          timeout 180 adb wait-for-device
+          timeout 240 bash -c 'until [[ "$(adb shell getprop sys.boot_completed | tr -d "\r")" == 1 ]]; do sleep 3; done'
+          adb shell getprop ro.product.cpu.abilist
+          adb install studio3000-debug.apk
+          pkg=ch.studio3000.macro
+          component=$(adb shell cmd package resolve-activity --brief "$pkg" | tr -d '\r' | tail -1)
+          adb shell am start -W -n "$component"
+          for attempt in $(seq 1 40); do
+            pid=$(adb shell pidof "$pkg" | tr -d '\r' || true)
+            if [[ -n "$pid" ]] && adb shell cat /proc/net/unix | grep -F "webview_devtools_remote_$pid" >/dev/null; then break; fi
+            sleep 2
+          done
+          if ! adb shell pidof "$pkg"; then
+            adb logcat -b crash -d -t 80
+            exit 1
+          fi
+          adb forward tcp:9222 "localabstract:webview_devtools_remote_$pid"
+          node --input-type=module <<'JS'
+          import assert from 'node:assert/strict';
+          const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+          let observed;
+          for (let i=0; i<40; i++) {
+            const pages = await fetch('http://127.0.0.1:9222/json/list').then(r=>r.json());
+            const page = pages.find(p => p.type === 'page');
+            if (!page) { await delay(1500); continue; }
+            const ws = new WebSocket(page.webSocketDebuggerUrl);
+            await new Promise((resolve,reject)=>{ws.onopen=resolve;ws.onerror=reject;});
+            const value = new Promise((resolve,reject)=>{ws.onmessage=e=>{
+              const msg=JSON.parse(e.data);
+              if(msg.id===1) resolve(msg.result?.result?.value);
+            };ws.onerror=reject;});
+            ws.send(JSON.stringify({id:1,method:'Runtime.evaluate',params:{expression:
+              '({origin:location.origin,ready:document.readyState,title:document.title,body:document.body?.innerText?.trim().slice(0,200),scripts:document.scripts.length})',returnByValue:true}}));
+            observed=await value;
+            ws.close();
+            if (observed?.ready==='complete' && observed.body && observed.scripts>0) break;
+            await delay(1500);
+          }
+          console.log(observed);
+          assert(['https://tauri.localhost','http://tauri.localhost','https://macro.studio3000.ch'].includes(observed?.origin));
+          assert(observed.ready==='complete' && observed.scripts>0 && observed.body);
+          assert(!/web page not available|ERR_NAME_NOT_RESOLVED|ERR_CONNECTION_REFUSED/i.test(observed.body));
+          JS

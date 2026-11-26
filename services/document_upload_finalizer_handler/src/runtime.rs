@@ -61,7 +61,7 @@ impl AppContext {
             OwnedEntityRegistrar::new(OwnerGrantPolicy::new(PgBotsRepo::new(db_pool.clone())));
         let repo = PgDocumentRepo::new(db_pool, registrar);
         let document_port = PgDocumentUploadPort::new(repo);
-        let s3_client = macro_aws_config::s3_client().await;
+        let s3_client = macro_aws_config::document_s3_client().await?;
         let object_reader = S3DocumentObjectReader::new(s3_client.clone());
         let convert_queue = macro_queues::ConvertQueue::new();
         let sqs_client = sqs_client::SQS::new(aws_sdk_sqs::Client::new(

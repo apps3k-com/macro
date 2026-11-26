@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: bccfd8f0c41a5ed4a47aeda0296feb9e9d245434
+          ref: dbf70e7cda0b4ce5affd3067b0c8aceeb8e4191a
           persist-credentials: false
       - name: Install the pinned Android SDK and NDK
         shell: bash

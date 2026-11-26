@@ -15,7 +15,7 @@ jobs:
     timeout-minutes: 120
     env:
       SERVICE: ${{ matrix.service }}
-      SOURCE_COMMIT: 1e97f4b6a019c0850806cc133771ccac70f4e5d7
+      SOURCE_COMMIT: 5f92916d40de45f8af534c131e9278fb3f0bcff8
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:

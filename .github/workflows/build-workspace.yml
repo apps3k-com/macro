@@ -1,7 +1,7 @@
 name: Build Studio3000 workspace services
 on:
   push:
-    branches: [codex/studio-object-storage]
+    branches: [codex/channel-file-reads-build]
   workflow_dispatch:
 permissions:
   contents: read
@@ -15,7 +15,7 @@ jobs:
     timeout-minutes: 120
     env:
       SERVICE: ${{ matrix.service }}
-      SOURCE_COMMIT: 0c7752e0b449790a95e78f38b5581b2904010738
+      SOURCE_COMMIT: 7a12c2c18fea3664412c9e5c31983b4fc7692e68
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:

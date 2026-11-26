@@ -91,31 +91,31 @@ jobs:
             # line. Keep the whole build log and Xcode'"'"'s activity logs as artifacts.
             mkdir -p ../../artifacts
             log=../../artifacts/ios-build.log
-            bundle=tauri/src-tauri/gen/apple/build/arm64/macro.app
-            test ! -e "$bundle"
+            ipa=tauri/src-tauri/gen/apple/build/arm64/macro.ipa
+            test ! -e "$ipa"
             just ios-prepare
             # Match the Xcode Rust build phase so both Tauri processes share the IPC address.
             export TMPDIR="$(/usr/bin/getconf DARWIN_USER_TEMP_DIR)"
             (cd tauri/src-tauri && cargo tauri ios build --target aarch64 --ci --no-sign -v --config "$MACRO_DEVICE_CONFIG" -- --no-default-features) >"$log" 2>&1 &
             build_pid=$!
             while kill -0 "$build_pid" 2>/dev/null; do
-              if test -s "$bundle/Info.plist" && grep -q "Finished .*1 iOS Bundle at:" "$log"; then
+              if test -s "$ipa" && grep -q "Finished .*1 iOS Bundle at:" "$log"; then
                 break
               fi
               sleep 10
             done
             if ! kill -0 "$build_pid" 2>/dev/null; then wait "$build_pid"; fi
-            test -s "$bundle/Info.plist"
-            executable=$(/usr/libexec/PlistBuddy -c "Print CFBundleExecutable" "$bundle/Info.plist")
-            test -x "$bundle/$executable"
-            /usr/bin/lipo -verify_arch arm64 "$bundle/$executable"
-            echo "Verified newly built arm64 device executable."
+            test -s "$ipa"
+            /usr/bin/unzip -tq "$ipa"
           '
 
-          app="apps/web/tauri/src-tauri/gen/apple/build/arm64/macro.app"
+          ipa="apps/web/tauri/src-tauri/gen/apple/build/arm64/macro.ipa"
+          ditto -x -k "$ipa" "$RUNNER_TEMP/unsigned-device"
+          app="$RUNNER_TEMP/unsigned-device/Payload/macro.app"
           test -s "$app/Info.plist"
           test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$app/Info.plist")" = ch.studio3000.macro
           executable=$(/usr/libexec/PlistBuddy -c 'Print CFBundleExecutable' "$app/Info.plist")
+          /usr/bin/lipo -verify_arch arm64 "$app/$executable"
           xcrun vtool -show-build "$app/$executable" | grep -E 'platform IOS$'
           for plugin in ShareExtension NotificationServiceExtension; do
             /usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$app/PlugIns/$plugin.appex/Info.plist" | grep -Fx "ch.studio3000.macro.$plugin"

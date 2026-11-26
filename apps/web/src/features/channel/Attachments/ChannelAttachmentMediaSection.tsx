@@ -1,4 +1,5 @@
 import { type MediaItem, mapMediaItems } from '@channel/Media/media-items';
+import { createPlayableMediaItems } from '@channel/Media/native-media-source';
 import {
   type ChannelAttachmentsData,
   flattenAttachments,
@@ -12,7 +13,7 @@ export function ChannelAttachmentMediaSection(props: { channelId: string }) {
     () => props.channelId
   );
 
-  const items = createMemo<MediaItem[]>((previous = []) =>
+  const mappedItems = createMemo<MediaItem[]>((previous = []) =>
     mapMediaItems(
       flattenAttachments(
         attachmentsQuery.data as ChannelAttachmentsData | undefined
@@ -20,6 +21,7 @@ export function ChannelAttachmentMediaSection(props: { channelId: string }) {
       previous
     )
   );
+  const items = createPlayableMediaItems(mappedItems);
 
   return (
     <MediaGallery

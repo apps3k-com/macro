@@ -4,6 +4,11 @@ import {
   mapMediaItems,
   partitionAttachments,
 } from '@channel/Media/media-items';
+import {
+  createNativeMediaSource,
+  createPlayableMediaItems,
+  usesNativeMediaGrants,
+} from '@channel/Media/native-media-source';
 import { VoiceMemoPlayer } from '@channel/Media/VoiceMemoPlayer';
 import { staticFileIdEndpoint } from '@core/constant/servers';
 import { getDocumentMentions } from '@core/util/documentMentions';
@@ -24,9 +29,10 @@ export function Attachments(props: AttachmentsProps) {
   const buckets = createMemo(() =>
     partitionAttachments(message().attachments ?? [])
   );
-  const mediaItems = createMemo<MediaItem[]>((previous = []) =>
+  const mappedItems = createMemo<MediaItem[]>((previous = []) =>
     mapMediaItems(buckets().mediaAttachments, previous)
   );
+  const mediaItems = createPlayableMediaItems(mappedItems);
   // A document the text also mentions already previews under the text
   // (MentionedImages); previewing the attachment too would show it twice.
   const documentIds = createMemo(() => {
@@ -62,12 +68,17 @@ export function Attachments(props: AttachmentsProps) {
         <Show when={buckets().audioAttachments.length > 0}>
           <div class="flex flex-col gap-2" data-message-voice-memos>
             <For each={buckets().audioAttachments}>
-              {(attachment) => (
-                <VoiceMemoPlayer
-                  src={staticFileIdEndpoint(attachment.entity_id)}
-                  label={t('channelComposer.voiceMemo')}
-                />
-              )}
+              {(attachment) => {
+                const source = usesNativeMediaGrants()
+                  ? createNativeMediaSource(() => attachment.entity_id)
+                  : () => staticFileIdEndpoint(attachment.entity_id);
+                return (
+                  <VoiceMemoPlayer
+                    src={source()}
+                    label={t('channelComposer.voiceMemo')}
+                  />
+                );
+              }}
             </For>
           </div>
         </Show>

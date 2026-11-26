@@ -859,7 +859,9 @@ function defineEnv(mode: string, command: string) {
     'import.meta.env.GATEWAY_ORIGIN': JSON.stringify(
       mode === 'development'
         ? 'https://dev-gateway.macro.com'
-        : 'https://gateway.macro.com'
+        : mode === 'production'
+          ? 'https://macro.studio3000.ch'
+          : 'https://gateway.macro.com'
     ),
     'import.meta.env.__LOCAL_DOCKER__': process.env.LOCAL_DOCKER === 'true',
     'import.meta.env.__LOCAL_JWT__': JSON.stringify(process.env.LOCAL_JWT),

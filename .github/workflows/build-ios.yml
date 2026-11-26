@@ -35,6 +35,7 @@ jobs:
           nix --version
         shell: bash
       - name: Compile unsigned iOS simulator application
+        timeout-minutes: 100
         run: |
           set -euo pipefail
           xcodebuild -version
@@ -88,20 +89,40 @@ jobs:
             # the job log without the linker'"'"'s own error after rustc'"'"'s long command
             # line. Keep the whole build log and Xcode'"'"'s activity logs as artifacts.
             mkdir -p ../../artifacts
-            if ! just ios-build-sim true 2>&1 | tee ../../artifacts/ios-build.log; then
-              echo "--- linker and compiler errors ---" >&2
-              grep -E "ld: |Undefined symbols|library not found|framework not found|error:" \
-                ../../artifacts/ios-build.log | cut -c1-2000 | tail -40 >&2 || true
-              find "$HOME/Library/Developer/Xcode/DerivedData" -name "*.xcactivitylog" \
-                -exec cp {} ../../artifacts/ \; 2>/dev/null || true
-              exit 1
-            fi
+            log=../../artifacts/ios-build.log
+            bundle=tauri/src-tauri/gen/apple/build/arm64-sim/macro.app
+            test ! -e "$bundle"
+            just ios-build-sim true >"$log" 2>&1 &
+            build_pid=$!
+            while kill -0 "$build_pid" 2>/dev/null; do
+              if test -s "$bundle/Info.plist" && grep -q "Finished .*1 iOS Bundle at:" "$log"; then
+                break
+              fi
+              sleep 10
+            done
+            if ! kill -0 "$build_pid" 2>/dev/null; then wait "$build_pid"; fi
+            test -s "$bundle/Info.plist"
+            executable=$(/usr/libexec/PlistBuddy -c "Print CFBundleExecutable" "$bundle/Info.plist")
+            test -x "$bundle/$executable"
+            /usr/bin/lipo -verify_arch arm64 "$bundle/$executable"
+            echo "Verified newly built arm64 simulator executable."
           '
 
           app="apps/web/tauri/src-tauri/gen/apple/build/arm64-sim/macro.app"
           test -s "$app/Info.plist"
           test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$app/Info.plist")" = ch.studio3000.macro
           ditto -c -k --keepParent "$app" "$RUNNER_TEMP/macro-simulator.zip"
+      - name: Preserve Xcode diagnostics after a build failure
+        if: failure() || cancelled()
+        run: |
+          mkdir -p artifacts
+          find "$HOME/Library/Developer/Xcode/DerivedData" -name '*.xcactivitylog' -exec cp {} artifacts/ \; 2>/dev/null || true
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: failure() || cancelled()
+        with:
+          name: studio3000-ios-build-diagnostics
+          path: artifacts/
+          retention-days: 3
       - name: Launch the compiled application in an iPhone simulator
         run: |
           set -euo pipefail

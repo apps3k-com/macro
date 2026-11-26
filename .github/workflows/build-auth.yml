@@ -1,7 +1,7 @@
 name: Build Studio3000 authentication service
 on:
   push:
-    branches: [studio3000-build]
+    branches: [codex/studio-private-signup]
   workflow_dispatch:
 permissions:
   contents: read
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     env:
-      SOURCE_COMMIT: 8d042f66eab84cde33170a77c494bd6dd678dcfa
+      SOURCE_COMMIT: 8dbb26f0f018c04aa4690b09abfb3a4dd257ab7c
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:

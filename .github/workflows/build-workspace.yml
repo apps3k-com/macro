@@ -1,7 +1,7 @@
 name: Build Studio3000 workspace services
 on:
   push:
-    branches: [codex/channel-file-reads-build]
+    branches: [codex/private-media-build]
   workflow_dispatch:
 permissions:
   contents: read
@@ -15,7 +15,7 @@ jobs:
     timeout-minutes: 120
     env:
       SERVICE: ${{ matrix.service }}
-      SOURCE_COMMIT: 5f92916d40de45f8af534c131e9278fb3f0bcff8
+      SOURCE_COMMIT: 255f6f0cdfdc3aff1f379baa08f012d921837eb5
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:

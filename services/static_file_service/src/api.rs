@@ -39,11 +39,8 @@ pub async fn setup_and_serve(
     );
 
     let sqs_client = aws_sdk_sqs::Client::new(&aws_config);
-    let inner_client = macro_aws_config::s3_client().await;
-    let storage_client = S3Client::new(
-        inner_client,
-        config.static_storage_bucket.as_ref().to_owned(),
-    );
+    let storage_client =
+        S3Client::from_env(config.static_storage_bucket.as_ref().to_owned()).await?;
 
     let authorization_state = MacroAuthorizationState::new(Arc::new(AuthorizationService::new(
         MacroAuthJwtValidator::new(jwt_validation_args.clone()),

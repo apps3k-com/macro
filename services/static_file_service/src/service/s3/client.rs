@@ -6,6 +6,7 @@ use std::time::Duration;
 pub struct S3Client {
     inner: aws_sdk_s3::Client,
     storage_bucket: String,
+    endpoints: Option<(String, String)>,
 }
 
 impl S3Client {
@@ -13,7 +14,59 @@ impl S3Client {
         S3Client {
             inner,
             storage_bucket,
+            endpoints: None,
         }
+    }
+
+    /// Use the dedicated object store when all three Studio settings are present.
+    /// Metadata and queues continue to use the workspace AWS configuration.
+    pub async fn from_env(storage_bucket: String) -> Result<Self> {
+        use std::env::{VarError, var};
+        let settings = (
+            var("MACRO_STATIC_S3_PROFILE"),
+            var("MACRO_STATIC_S3_ENDPOINT"),
+            var("MACRO_STATIC_S3_PUBLIC_URL"),
+        );
+        match settings {
+            (Err(VarError::NotPresent), Err(VarError::NotPresent), Err(VarError::NotPresent)) => {
+                Ok(Self::new(
+                    macro_aws_config::s3_client().await,
+                    storage_bucket,
+                ))
+            }
+            (Ok(profile), Ok(internal), Ok(public)) => {
+                let internal = internal.trim_end_matches('/');
+                let public = public.trim_end_matches('/');
+                anyhow::ensure!(
+                    public.starts_with("https://")
+                        && (internal.starts_with("http://") || internal.starts_with("https://")),
+                    "invalid static S3 endpoints"
+                );
+                let sdk = macro_aws_config::named_profile_sdk_config(&profile).await?;
+                let config = aws_sdk_s3::config::Builder::from(&sdk)
+                    .endpoint_url(internal)
+                    .force_path_style(true)
+                    .build();
+                Ok(Self {
+                    inner: aws_sdk_s3::Client::from_conf(config),
+                    storage_bucket,
+                    endpoints: Some((format!("{internal}/"), format!("{public}/"))),
+                })
+            }
+            _ => anyhow::bail!("static S3 requires a profile, endpoint and public URL together"),
+        }
+    }
+
+    fn public_url(&self, signed: &str) -> Result<String> {
+        if let Some((internal, public)) = &self.endpoints {
+            // Keep the original escaped path and query byte-for-byte. The proxy
+            // supplies the signed host when forwarding to this private endpoint.
+            let path = signed
+                .strip_prefix(internal.as_str())
+                .context("unexpected static S3 signing endpoint")?;
+            return Ok(format!("{public}{path}"));
+        }
+        Ok(macro_aws_config::transform_aws_url(signed))
     }
 
     #[tracing::instrument(skip(self))]
@@ -39,7 +92,7 @@ impl S3Client {
             .await
             .context("failed to create presigned url")?;
 
-        Ok(macro_aws_config::transform_aws_url(presigned_url.uri()))
+        self.public_url(presigned_url.uri())
     }
 
     #[tracing::instrument(skip(self))]
@@ -70,7 +123,7 @@ impl S3Client {
             .await
             .context("failed to create presigned URL")?;
 
-        Ok(macro_aws_config::transform_aws_url(presigned_url.uri()))
+        self.public_url(presigned_url.uri())
     }
 
     #[tracing::instrument(skip(self), err)]

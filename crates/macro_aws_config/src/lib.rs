@@ -19,29 +19,33 @@ maybe_env_var! {
 /// Select a dedicated SNS profile when notification delivery uses an AWS account
 /// separate from the workspace queues and storage. Only SNS clients use the result.
 pub async fn sns_sdk_config(workspace: &SdkConfig) -> std::io::Result<SdkConfig> {
+    match std::env::var("MACRO_SNS_PROFILE") {
+        Err(std::env::VarError::NotPresent) => Ok(workspace.clone()),
+        Err(_) => Err(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            "invalid MACRO_SNS_PROFILE",
+        )),
+        Ok(profile) => named_profile_sdk_config(&profile).await,
+    }
+}
+
+/// Resolve credentials and region exclusively from the selected AWS profile.
+pub async fn named_profile_sdk_config(profile: &str) -> std::io::Result<SdkConfig> {
     use aws_config::meta::region::ProvideRegion;
     use aws_config::profile::{ProfileFileCredentialsProvider, ProfileFileRegionProvider};
-    use std::env::{VarError, var};
     use std::io::{Error, ErrorKind};
 
-    let profile = match var("MACRO_SNS_PROFILE") {
-        Err(VarError::NotPresent) => return Ok(workspace.clone()),
-        Ok(value) if !value.trim().is_empty() => value,
-        _ => {
-            return Err(Error::new(
-                ErrorKind::InvalidInput,
-                "invalid MACRO_SNS_PROFILE",
-            ));
-        }
-    };
+    if profile.trim().is_empty() {
+        return Err(Error::new(ErrorKind::InvalidInput, "empty AWS profile"));
+    }
     let region = ProfileFileRegionProvider::builder()
-        .profile_name(&profile)
+        .profile_name(profile)
         .build()
         .region()
         .await
-        .ok_or_else(|| Error::new(ErrorKind::InvalidInput, "SNS profile requires a region"))?;
+        .ok_or_else(|| Error::new(ErrorKind::InvalidInput, "AWS profile requires a region"))?;
     let credentials = ProfileFileCredentialsProvider::builder()
-        .profile_name(&profile)
+        .profile_name(profile)
         .build();
     Ok(aws_config::defaults(aws_config::BehaviorVersion::latest())
         .profile_name(profile)

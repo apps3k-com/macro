@@ -1,0 +1,36 @@
+name: Build Studio3000 authentication service
+on:
+  push:
+    branches: [studio3000-build]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      SOURCE_COMMIT: 8a87ac087d0502a3e01ba87850c6caa280a943d1
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ env.SOURCE_COMMIT }}
+          persist-credentials: false
+      - name: Build Linux image
+        run: |
+          set -eu
+          docker build -f docker/Dockerfile --build-arg SERVICE_NAME=authentication_service \
+            --label org.opencontainers.image.revision="$SOURCE_COMMIT" \
+            -t "macro-auth:$SOURCE_COMMIT" .
+          docker image save "macro-auth:$SOURCE_COMMIT" | gzip -1 > "$RUNNER_TEMP/macro-auth.tar.gz"
+          cd "$RUNNER_TEMP"
+          sha256sum macro-auth.tar.gz > macro-auth.tar.gz.sha256
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: macro-auth-linux-amd64
+          path: |
+            ${{ runner.temp }}/macro-auth.tar.gz
+            ${{ runner.temp }}/macro-auth.tar.gz.sha256
+          retention-days: 3
+          compression-level: 0
+          if-no-files-found: error

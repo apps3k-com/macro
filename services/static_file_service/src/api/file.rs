@@ -1,9 +1,9 @@
-mod read_access;
 pub mod bulk_delete_file;
 pub mod delete_file;
 pub mod get_file;
 pub mod metadata;
 pub mod put_presigned_url;
+mod read_access;
 
 use crate::api::context::AppState;
 use axum::Router;
@@ -19,6 +19,7 @@ pub fn router() -> Router<AppState> {
             "/file/{file_id}/presigned-url",
             get(get_file::handle_get_presigned_url),
         )
+        .route("/file/{file_id}/content", get(get_file::content))
         .route("/file", put(put_presigned_url::put_presigned_url))
         .route("/file/{file_id}", delete(delete_file::handle_delete_file))
         .route(

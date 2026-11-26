@@ -108,21 +108,26 @@ impl S3Client {
     }
 
     #[tracing::instrument(skip(self))]
-    pub async fn get_presigned_url(&self, key: String) -> Result<String> {
-        let presigned_url = self
-            .inner
-            .get_object()
-            .bucket(self.storage_bucket.clone())
-            .key(key)
-            .presigned(
-                aws_sdk_s3::presigning::PresigningConfig::expires_in(
-                    std::time::Duration::from_secs(3600), // 1 hour
-                )
-                .context("failed to create presigning config")?,
-            )
-            .await
-            .context("failed to create presigned URL")?;
-
+    pub async fn get_presigned_url(&self, key: String, head_only: bool) -> Result<String> {
+        let config = PresigningConfig::expires_in(std::time::Duration::from_secs(3600))
+            .context("failed to create presigning config")?;
+        let presigned_url = if head_only {
+            self.inner
+                .head_object()
+                .bucket(&self.storage_bucket)
+                .key(key)
+                .presigned(config)
+                .await
+                .context("failed to sign HEAD")?
+        } else {
+            self.inner
+                .get_object()
+                .bucket(&self.storage_bucket)
+                .key(key)
+                .presigned(config)
+                .await
+                .context("failed to sign GET")?
+        };
         self.public_url(presigned_url.uri())
     }
 

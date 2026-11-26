@@ -321,7 +321,12 @@ final class IncomingCallCoordinator: NSObject, CXProviderDelegate, PKPushRegistr
         let callIdString = dict["callId"] as? String ?? ""
         let livekitServerUrl = dict["livekitServerUrl"] as? String
         let livekitToken = dict["livekitToken"] as? String
-        let ringStatusUrl = dict["ringStatusUrl"] as? String
+        let ringStatusUrl = (dict["ringStatusUrl"] as? String).flatMap { value in
+            guard let url = URLComponents(string: value), url.scheme == "https",
+                  url.host == "macro.studio3000.ch", url.user == nil, url.password == nil,
+                  url.port == nil || url.port == 443 else { return nil as String? }
+            return value
+        }
         let hasNativeCredentials = livekitServerUrl != nil && livekitToken != nil
         callKitLog("Received VoIP push callId=\(callIdString) channelId=\(channelId) hasChannelName=\(channelName != nil) hasNativeCredentials=\(hasNativeCredentials)")
 

@@ -12,7 +12,7 @@ class CallOfferTest {
         put("callerName", "Alice")
         put("livekitServerUrl", "wss://livekit.example.com")
         put("livekitToken", "recipient-scoped-token")
-        put("ringStatusUrl", "https://dev.macro.com/call/ring-status/call-1")
+        put("ringStatusUrl", "https://macro.studio3000.ch/call/ring-status/call-1")
     }
     @Test fun acceptsTheBackendCallEnvelope() {
         val parsed = CallOffer.parse(offer().toString(), 1000)
@@ -38,7 +38,7 @@ class CallOfferTest {
         assertEquals("test=value", next.tracestate)
     }
     @Test fun refusesToSendBearerTokensToUntrustedOrInsecureRingEndpoints() {
-        for (url in listOf("http://dev.macro.com/ring", "https://macro.com.evil.example/ring", "https://evil.example/ring", "https://user@macro.com/ring")) {
+        for (url in listOf("http://macro.studio3000.ch/ring", "https://macro.com.evil.example/ring", "https://evil.example/ring", "https://user@macro.studio3000.ch/ring", "https://macro.studio3000.ch:8443/ring", "https://macro.com/ring")) {
             assertThrows(IllegalArgumentException::class.java) { CallOffer.parse(offer().put("ringStatusUrl", url).toString(), 1000) }
         }
     }

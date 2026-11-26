@@ -60,7 +60,7 @@ pub struct S3EventRecord {
 
 #[derive(Deserialize, Debug, PartialEq)]
 pub struct UserIdentity {
-    #[serde(rename = "principalId")]
+    #[serde(rename = "principalId", alias = "PrincipalId")]
     pub principal_id: String,
 }
 

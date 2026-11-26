@@ -70,6 +70,7 @@ pub async fn main() -> anyhow::Result<()> {
     );
 
     let aws_config = macro_aws_config::get_macro_aws_config().await;
+    let sns_config = macro_aws_config::sns_sdk_config(&aws_config).await?;
 
     let secretsmanager_client = secretsmanager_client::SecretsManager::new(
         aws_sdk_secretsmanager::Client::new(&aws_config),
@@ -93,7 +94,7 @@ pub async fn main() -> anyhow::Result<()> {
             ::notification::outbound::repository::DbNotificationRepository::new(db.clone());
         let event_sns_manager =
             ::notification::outbound::sns_endpoint::SnsEndpointManagerAdapter::new(
-                aws_sdk_sns::Client::new(&aws_config),
+                aws_sdk_sns::Client::new(&sns_config),
             );
 
         let push_event_redis_conn = redis_client
@@ -135,7 +136,7 @@ pub async fn main() -> anyhow::Result<()> {
         tokio::spawn(async move { event_worker.run().await });
     }
 
-    let sns_client = sns_client::SNS::new(aws_sdk_sns::Client::new(&aws_config));
+    let sns_client = sns_client::SNS::new(aws_sdk_sns::Client::new(&sns_config));
 
     let jwt_args =
         JwtValidationArgs::new_with_secret_manager(config.environment, &secretsmanager_client)
@@ -159,7 +160,7 @@ pub async fn main() -> anyhow::Result<()> {
     );
     let sns_endpoint_manager =
         ::notification::outbound::sns_endpoint::SnsEndpointManagerAdapter::new(
-            aws_sdk_sns::Client::new(&aws_config),
+            aws_sdk_sns::Client::new(&sns_config),
         );
     let platform_config = ::notification::domain::service::PlatformArnConfig {
         apns_platform_arn: config.sns_apns_platform_arn.as_ref().to_string(),
@@ -228,7 +229,7 @@ pub async fn main() -> anyhow::Result<()> {
     );
 
     let mobile_adapter = MobilePushAdapter {
-        push_service: aws_sdk_sns::Client::new(&aws_config),
+        push_service: aws_sdk_sns::Client::new(&sns_config),
         apns_bundle_id: config.apple_bundle_id.as_ref().to_string(),
         voip_bundle_id: None,
     };

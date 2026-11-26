@@ -16,6 +16,41 @@ maybe_env_var! {
     pub struct LocalAwsPublicUrl;
 }
 
+/// Select a dedicated SNS profile when notification delivery uses an AWS account
+/// separate from the workspace queues and storage. Only SNS clients use the result.
+pub async fn sns_sdk_config(workspace: &SdkConfig) -> std::io::Result<SdkConfig> {
+    use aws_config::meta::region::ProvideRegion;
+    use aws_config::profile::{ProfileFileCredentialsProvider, ProfileFileRegionProvider};
+    use std::env::{VarError, var};
+    use std::io::{Error, ErrorKind};
+
+    let profile = match var("MACRO_SNS_PROFILE") {
+        Err(VarError::NotPresent) => return Ok(workspace.clone()),
+        Ok(value) if !value.trim().is_empty() => value,
+        _ => {
+            return Err(Error::new(
+                ErrorKind::InvalidInput,
+                "invalid MACRO_SNS_PROFILE",
+            ));
+        }
+    };
+    let region = ProfileFileRegionProvider::builder()
+        .profile_name(&profile)
+        .build()
+        .region()
+        .await
+        .ok_or_else(|| Error::new(ErrorKind::InvalidInput, "SNS profile requires a region"))?;
+    let credentials = ProfileFileCredentialsProvider::builder()
+        .profile_name(&profile)
+        .build();
+    Ok(aws_config::defaults(aws_config::BehaviorVersion::latest())
+        .profile_name(profile)
+        .region(region)
+        .credentials_provider(credentials)
+        .load()
+        .await)
+}
+
 /// Creates an S3 client
 #[cfg(feature = "s3")]
 pub async fn s3_client() -> aws_sdk_s3::Client {

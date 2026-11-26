@@ -227,6 +227,7 @@ async fn run_server() -> anyhow::Result<()> {
     let env = Environment::new_or_prod();
 
     let aws_config = macro_aws_config::get_macro_aws_config().await;
+    let sns_config = macro_aws_config::sns_sdk_config(&aws_config).await?;
 
     let secretsmanager_client = secretsmanager_client::SecretsManager::new(
         aws_sdk_secretsmanager::Client::new(&aws_config),
@@ -953,7 +954,7 @@ async fn run_server() -> anyhow::Result<()> {
             let voip_repo =
                 notification::outbound::repository::DbNotificationRepository::new(db.clone());
             let voip_mobile = notification::outbound::mobile::MobilePushAdapter {
-                push_service: aws_sdk_sns::Client::new(&aws_config),
+                push_service: aws_sdk_sns::Client::new(&sns_config),
                 apns_bundle_id: bundle_id.to_string(),
                 voip_bundle_id: Some(format!("{}.voip", bundle_id.as_ref())),
             };

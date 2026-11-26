@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: 6e462e766708a0d5dd16bca56e8b4a3f1839e253
+          ref: bccfd8f0c41a5ed4a47aeda0296feb9e9d245434
           persist-credentials: false
       - name: Select the upstream Xcode 27.1 SDK
         run: |

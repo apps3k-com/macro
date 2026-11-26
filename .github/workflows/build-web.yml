@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
-          ref: e3c93d06b7ee9b79a4fde5947cbd725bb9456e82
+          ref: 4abfa017e0e042b5e47470c6e09293ed72f322fe
           persist-credentials: false
       - name: Free space for the pinned Nix toolchain
         run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
@@ -19,7 +19,7 @@ jobs:
       - uses: ./.github/actions/setup-reqs-web
       - name: Verify Studio3000 service routes
         working-directory: apps/web
-        run: bunx --no-install vitest run src/lib/core/constant/servers.test.ts
+        run: bunx --no-install vitest run src/lib/core/constant/servers.test.ts src/lib/core/util/macroAppUrl.test.ts
       - name: Build production bundle
         working-directory: apps/web
         run: just --jobs 1 build-prod

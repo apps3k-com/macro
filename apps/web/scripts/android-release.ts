@@ -5,7 +5,7 @@ import { mkdir, readFile, symlink, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { z } from 'zod';
 
-export const androidPackage = 'com.macro.workspace.mobile';
+export const androidPackage = 'ch.studio3000.macro';
 
 const androidConfigPath = new URL(
   '../tauri/src-tauri/tauri.android.conf.json',

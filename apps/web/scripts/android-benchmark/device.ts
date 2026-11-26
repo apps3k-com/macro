@@ -3,7 +3,7 @@ import { promisify } from 'node:util';
 
 const run = promisify(execFile);
 
-export const ANDROID_PACKAGE = 'com.macro.workspace.mobile';
+export const ANDROID_PACKAGE = 'ch.studio3000.macro';
 const ACTIVITY = `${ANDROID_PACKAGE}/.MainActivity`;
 /** Longer than any adb call the harness makes; a stalled one fails the step. */
 const ADB_TIMEOUT_MS = 60_000;

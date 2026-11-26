@@ -23,7 +23,6 @@ if [[ -n "$firebase_config" ]]; then
 fi
 
 firebase_destination=tauri/src-tauri/gen/android/app/google-services.json
-bun scripts/android-firebase.ts "$action" "${firebase_config:---doppler}" "$firebase_destination"
 
 # Only release builds need the upload key. Stop parsing at Cargo's separator.
 release_build=true
@@ -34,7 +33,14 @@ for arg in "$@"; do
   esac
 done
 if [[ "$action" == "build" && "$release_build" == true ]]; then
-  bun scripts/android-release.ts ensure-signing "$HOME/.macro-android-signing" tauri/src-tauri/gen/android/keystore.properties
+  [[ -n "$firebase_config" ]] || { echo "Pass the Studio Firebase configuration with --firebase-config" >&2; exit 1; }
+  [[ -f tauri/src-tauri/gen/android/keystore.properties ]] || { echo "Configure the Studio Android upload key before building a release" >&2; exit 1; }
+fi
+if [[ -n "$firebase_config" ]]; then
+  bun scripts/android-firebase.ts "$action" "$firebase_config" "$firebase_destination"
+elif [[ -e "$firebase_destination" ]]; then
+  echo "Pass --firebase-config explicitly when the Android project already contains a Firebase configuration" >&2
+  exit 1
 fi
 
 if [[ "$(uname)" == "Darwin" ]]; then

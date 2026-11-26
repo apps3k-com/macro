@@ -11,21 +11,27 @@ pub struct S3EventNotification {
 #[derive(Deserialize, Debug, PartialEq)]
 pub enum S3EventKind {
     TestEvent,
-    #[serde(rename = "ObjectCreated:*")]
+    #[serde(rename = "ObjectCreated:*", alias = "s3:ObjectCreated:*")]
     ObjectCreatedAll,
-    #[serde(rename = "ObjectCreated:Put")]
+    #[serde(rename = "ObjectCreated:Put", alias = "s3:ObjectCreated:Put")]
     ObjectCreatedPut,
-    #[serde(rename = "ObjectCreated:Post")]
+    #[serde(rename = "ObjectCreated:Post", alias = "s3:ObjectCreated:Post")]
     ObjectCreatedPost,
-    #[serde(rename = "ObjectCreated:Copy")]
+    #[serde(rename = "ObjectCreated:Copy", alias = "s3:ObjectCreated:Copy")]
     ObjectCreatedCopy,
-    #[serde(rename = "ObjectCreated:CompleteMultipartUpload")]
+    #[serde(
+        rename = "ObjectCreated:CompleteMultipartUpload",
+        alias = "s3:ObjectCreated:CompleteMultipartUpload"
+    )]
     ObjectCreatedCompleteMultipartUpload,
-    #[serde(rename = "ObjectRemoved:*")]
+    #[serde(rename = "ObjectRemoved:*", alias = "s3:ObjectRemoved:*")]
     ObjectRemovedAll,
-    #[serde(rename = "ObjectRemoved:Delete")]
+    #[serde(rename = "ObjectRemoved:Delete", alias = "s3:ObjectRemoved:Delete")]
     ObjectRemovedDelete,
-    #[serde(rename = "ObjectRemoved:DeleteMarkerCreated")]
+    #[serde(
+        rename = "ObjectRemoved:DeleteMarkerCreated",
+        alias = "s3:ObjectRemoved:DeleteMarkerCreated"
+    )]
     ObjectRemovedDeleteMarkerCreated,
 }
 

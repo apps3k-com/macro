@@ -41,7 +41,13 @@ async fn poll(sqs_url: String, context: AppState) -> Result<(), PollError> {
         .map_err(|_| PollError::PollingError)?;
 
     for message in messages {
-        if let Some(receipt) = &message.receipt_handle {
+        if let (Some(receipt), Some(body)) = (&message.receipt_handle, &message.body) {
+            if let Err(err) =
+                s3_message::handle_s3_message(body, context.metadata_client.clone()).await
+            {
+                tracing::warn!(error=?err, "retaining failed static-file notification for retry");
+                continue;
+            }
             let _ = context
                 .sqs_client
                 .delete_message()
@@ -53,7 +59,6 @@ async fn poll(sqs_url: String, context: AppState) -> Result<(), PollError> {
                     tracing::error!("failed to delete sqs message {:?}", e);
                     e
                 });
-            s3_message::handle_s3_message(message, context.metadata_client.clone()).await;
         }
     }
     Ok(())

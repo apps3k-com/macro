@@ -1,0 +1,52 @@
+name: Export Macro pilot resource catalog
+on:
+  push:
+    branches: [codex/pilot-catalog]
+permissions:
+  contents: read
+jobs:
+  catalog:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: 7c6875785860294bac5f3ffc16aa88576a4cdfd2
+          persist-credentials: false
+      - name: Export queue, bucket and table bindings from the upstream Rust catalog
+        run: |
+          set -euo pipefail
+          sudo rm -rf /usr/share/dotnet /opt/ghc /opt/hostedtoolcache/CodeQL
+          cat >> tooling/xtask/crates/xtask_local/src/local/resources.rs <<'RS'
+
+          #[test]
+          fn export_studio_pilot_catalog() {
+              use std::collections::BTreeMap;
+              let mut bindings = BTreeMap::new();
+              let mut queues = Vec::new();
+              for queue in QUEUES {
+                  queues.push(queue.name);
+                  for (key, form) in queue.bindings {
+                      bindings.insert(*key, form.value(queue.name));
+                  }
+              }
+              for bucket in BUCKETS {
+                  bindings.insert(bucket.env_key, bucket.name.to_owned());
+              }
+              for table in TABLES {
+                  bindings.insert(table.env_key, table.name.to_owned());
+              }
+              assert!(queues.len() > 10);
+              let output = serde_json::json!({ "queues": queues, "bindings": bindings });
+              std::fs::write(std::env::var("CATALOG_OUTPUT").unwrap(), serde_json::to_vec_pretty(&output).unwrap()).unwrap();
+          }
+          RS
+          export CARGO_PROFILE_TEST_DEBUG=0 CARGO_INCREMENTAL=0 CATALOG_OUTPUT="$RUNNER_TEMP/resources.json"
+          cargo test --locked -p xtask_local export_studio_pilot_catalog
+          test -s "$CATALOG_OUTPUT"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: studio-pilot-resources
+          path: ${{ runner.temp }}/resources.json
+          if-no-files-found: error
+          retention-days: 3

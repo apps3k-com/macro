@@ -14,7 +14,7 @@ SELECT EXISTS (
                 AND message.parent_entity_id = channel.id::text
                 AND message.deleted_at IS NULL
                 AND message.sender_id = $3
-                AND attachment.entity_type IN ('static/image', 'static/video')
+                AND attachment.entity_type IN ('static/image', 'static/video', 'static/audio')
                 AND attachment.entity_id = $1::uuid::text
           )
       )

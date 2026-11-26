@@ -1,0 +1,31 @@
+name: Build Studio3000 web client
+on:
+  push:
+    branches: [codex/web-build]
+permissions:
+  contents: read
+jobs:
+  web:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: e3c93d06b7ee9b79a4fde5947cbd725bb9456e82
+          persist-credentials: false
+      - name: Free space for the pinned Nix toolchain
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+      - uses: ./.github/actions/setup-nix
+      - uses: ./.github/actions/setup-reqs-web
+      - name: Verify Studio3000 service routes
+        working-directory: apps/web
+        run: bunx --no-install vitest run src/lib/core/constant/servers.test.ts
+      - name: Build production bundle
+        working-directory: apps/web
+        run: just --jobs 1 build-prod
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: studio3000-web
+          path: apps/web/dist
+          if-no-files-found: error
+          retention-days: 3

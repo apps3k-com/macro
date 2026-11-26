@@ -16,11 +16,7 @@ fn allowed_original_urls_are_accepted() {
         "tauri://localhost/app/login",
         "http://tauri.localhost/app/login",
         "https://tauri.localhost/app/login",
-        "http://localhost:3000/app/login",
-        "https://localhost/app/login",
-        "https://dev.macro.com/app/login",
-        "https://macro.com/app/login",
-        "https://www.macro.com/app/login",
+        "https://macro.studio3000.ch/app/login",
     ] {
         let original_url = Url::parse(original_url).expect("test URL should parse");
         assert!(
@@ -33,6 +29,10 @@ fn allowed_original_urls_are_accepted() {
 #[test]
 fn untrusted_original_urls_are_rejected() {
     for original_url in [
+        "https://macro.com/app/login",
+        "https://dev.macro.com/app/login",
+        "http://macro.studio3000.ch/app/login",
+        "https://macro.studio3000.ch:8443/app/login",
         "https://example.com/app/login",
         "https://macro.com.example.com/app/login",
         "https://www.macro.com.example.com/app/login",

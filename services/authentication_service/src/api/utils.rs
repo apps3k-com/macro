@@ -62,14 +62,14 @@ pub fn default_redirect_url() -> Url {
             format!("http://localhost:{port}").parse().unwrap()
         }
         Environment::Develop => "https://dev.macro.com/app".parse().unwrap(),
-        Environment::Production => "https://macro.com/app".parse().unwrap(),
+        Environment::Production => "https://macro.studio3000.ch/app".parse().unwrap(),
     }
 }
 
 fn domain<'a>() -> Option<&'a str> {
     match Environment::new_or_prod() {
-        Environment::Local => None,
-        Environment::Production | Environment::Develop => Some("macro.com"),
+        Environment::Production | Environment::Local => None,
+        Environment::Develop => Some("macro.com"),
     }
 }
 

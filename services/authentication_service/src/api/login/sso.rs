@@ -50,6 +50,17 @@ pub(crate) struct LoginQueryParams {
 }
 
 pub(crate) fn is_allowed_original_url(url: &Url) -> bool {
+    if matches!(
+        macro_env::Environment::new_or_prod(),
+        macro_env::Environment::Production
+    ) && matches!(url.scheme(), "http" | "https")
+        && url.host_str() != Some("tauri.localhost")
+    {
+        let frontend = crate::api::utils::default_redirect_url();
+        return url.origin() == frontend.origin()
+            && url.username().is_empty()
+            && url.password().is_none();
+    }
     let local_origin = match macro_env::Environment::new_or_prod() {
         macro_env::Environment::Local => Some(crate::api::utils::default_redirect_url()),
         _ => None,

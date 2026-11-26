@@ -56,7 +56,8 @@ android {
         targetCompatibility = JavaVersion.VERSION_1_8
     }
     compileSdk = 36
-    namespace = "ch.studio3000.macro"
+    // Tauri expands the namespace into Rust identifiers; macro is a reserved keyword.
+    namespace = "ch.studio3000.nativeapp"
     defaultConfig {
         applicationId = "ch.studio3000.macro"
         minSdk = 24

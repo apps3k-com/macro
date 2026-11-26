@@ -3,7 +3,7 @@
 use jni::{EnvUnowned, errors::ThrowRuntimeExAndDefault, objects::JObject, sys::jboolean};
 
 #[unsafe(no_mangle)]
-extern "system" fn Java_ch_studio3000_macro_MainActivity_initializeCertificateVerifier<
+extern "system" fn Java_ch_studio3000_nativeapp_MainActivity_initializeCertificateVerifier<
     'caller,
 >(
     mut env: EnvUnowned<'caller>,

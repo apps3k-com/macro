@@ -1,4 +1,4 @@
-package ch.studio3000.macro
+package ch.studio3000.nativeapp
 
 import android.os.Bundle
 import android.content.Context

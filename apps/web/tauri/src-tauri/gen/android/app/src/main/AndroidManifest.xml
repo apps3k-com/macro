@@ -22,7 +22,7 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|fontScale|density|layoutDirection|navigation"
             android:launchMode="singleTask"
             android:label="@string/main_activity_title"
-            android:name="ch.studio3000.macro.MainActivity"
+            android:name="ch.studio3000.nativeapp.MainActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize"
             android:supportsPictureInPicture="true"

@@ -10,12 +10,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [document_storage_service, notification_service, email_service, calendar_service]
+        service: [notification_service]
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     env:
       SERVICE: ${{ matrix.service }}
-      SOURCE_COMMIT: 7c6875785860294bac5f3ffc16aa88576a4cdfd2
+      SOURCE_COMMIT: 5a1fc367d451bc05cd6b250233a86b74dc685ad5
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:

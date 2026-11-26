@@ -1,7 +1,7 @@
 name: Build Studio3000 workspace services
 on:
   push:
-    branches: [codex/workspace-build]
+    branches: [codex/studio-object-storage]
   workflow_dispatch:
 permissions:
   contents: read
@@ -10,12 +10,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        service: [notification_service, document_storage_service]
+        service: [static_file_service]
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     env:
       SERVICE: ${{ matrix.service }}
-      SOURCE_COMMIT: 449d2ec7267cd0a6307ff9c275afc7ec1f673ca1
+      SOURCE_COMMIT: ee7f39286c7fc4f4694e935eae930520ead38a98
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:

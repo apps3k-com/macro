@@ -1042,7 +1042,7 @@ where
             .await
     }
 
-    #[tracing::instrument(err, skip(self))]
+    #[tracing::instrument(err, skip(self, device_token))]
     async fn register_device(
         &self,
         user_id: MacroUserIdStr<'_>,
@@ -1128,7 +1128,7 @@ where
         Ok(())
     }
 
-    #[tracing::instrument(err, skip(self))]
+    #[tracing::instrument(err, skip(self, device_token))]
     async fn unregister_device(
         &self,
         user_id: MacroUserIdStr<'_>,

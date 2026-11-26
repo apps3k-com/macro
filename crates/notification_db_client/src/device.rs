@@ -3,7 +3,7 @@ use model_notifications::DeviceType;
 use std::collections::HashMap;
 
 /// Gets the device endpoint for a given device token
-#[tracing::instrument(skip(db))]
+#[tracing::instrument(skip(db, device_token))]
 pub async fn get_device_endpoint(
     db: &sqlx::Pool<sqlx::Postgres>,
     device_token: &str,
@@ -25,7 +25,7 @@ pub async fn get_device_endpoint(
 }
 
 /// Upserts a user device registration
-#[tracing::instrument(skip(db))]
+#[tracing::instrument(skip(db, device_token))]
 pub async fn upsert_user_device(
     db: &sqlx::Pool<sqlx::Postgres>,
     user_id: &str,
@@ -116,7 +116,7 @@ pub async fn get_user_device_endpoints(
 }
 
 /// Deletes a user device registration
-#[tracing::instrument(skip(db))]
+#[tracing::instrument(skip(db, device_token))]
 pub async fn delete_user_device_token(
     db: &sqlx::Pool<sqlx::Postgres>,
     device_token: &str,

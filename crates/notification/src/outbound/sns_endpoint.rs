@@ -108,7 +108,7 @@ impl<S> SnsEndpointManagerAdapter<S> {
 }
 
 impl<S: SnsEndpointManagementOps> SnsEndpointManager for SnsEndpointManagerAdapter<S> {
-    #[tracing::instrument(err, skip(self))]
+    #[tracing::instrument(err, skip(self, token))]
     async fn create_platform_endpoint(
         &self,
         platform_arn: &str,
@@ -125,7 +125,7 @@ impl<S: SnsEndpointManagementOps> SnsEndpointManager for SnsEndpointManagerAdapt
         self.sns.get_endpoint_attributes(endpoint_arn).await
     }
 
-    #[tracing::instrument(err, skip(self))]
+    #[tracing::instrument(err, skip(self, attributes))]
     async fn set_endpoint_attributes(
         &self,
         endpoint_arn: &str,

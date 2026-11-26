@@ -123,6 +123,13 @@ jobs:
           name: studio3000-ios-build-diagnostics
           path: artifacts/
           retention-days: 3
+      - name: Preserve the verified simulator bundle
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: studio3000-ios-simulator
+          path: ${{ runner.temp }}/macro-simulator.zip
+          if-no-files-found: error
+          retention-days: 3
       - name: Launch the compiled application in an iPhone simulator
         run: |
           set -euo pipefail
@@ -133,12 +140,10 @@ jobs:
           xcrun simctl launch "$udid" ch.studio3000.macro
           sleep 15
           xcrun simctl spawn "$udid" launchctl list | awk '$1 ~ /^[0-9]+$/ && /ch[.]studio3000[.]macro/ {found=1} END{exit !found}'
-          xcrun simctl io "$udid" screenshot "$RUNNER_TEMP/ios-launch.png"
+          xcrun simctl io "$udid" screenshot --display=internal "$RUNNER_TEMP/ios-launch.png"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: studio3000-ios-simulator
-          path: |
-            ${{ runner.temp }}/macro-simulator.zip
-            ${{ runner.temp }}/ios-launch.png
+          name: studio3000-ios-launch
+          path: ${{ runner.temp }}/ios-launch.png
           if-no-files-found: error
           retention-days: 3

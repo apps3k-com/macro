@@ -118,6 +118,10 @@ fn bot_receipt(document_id: &str) -> EntityAccessReceipt<ViewAccessLevel> {
 struct TestUploadUrlPort;
 
 impl PresignedUploadUrlPort for TestUploadUrlPort {
+    async fn document_download_url(&self, key: &str, _seconds: u64) -> anyhow::Result<String> {
+        Ok(format!("https://storage.example/{key}"))
+    }
+
     async fn delete_object(&self, _key: &str) -> anyhow::Result<()> {
         Ok(())
     }
@@ -2200,6 +2204,10 @@ struct RecordingUploadUrlPort {
 }
 
 impl PresignedUploadUrlPort for RecordingUploadUrlPort {
+    async fn document_download_url(&self, key: &str, _seconds: u64) -> anyhow::Result<String> {
+        Ok(format!("https://storage.example/{key}"))
+    }
+
     async fn delete_object(&self, key: &str) -> anyhow::Result<()> {
         self.deletions.lock().unwrap().push(key.to_string());
         if self.fail_delete {

@@ -37,9 +37,19 @@ impl S3UploadUrlAdapter {
 }
 
 impl PresignedUploadUrlPort for S3UploadUrlAdapter {
+    async fn document_download_url(&self, key: &str, seconds: u64) -> anyhow::Result<String> {
+        Ok(macro_aws_config::document_download_url(
+            &self.client,
+            &self.document_storage_bucket,
+            key,
+            seconds,
+        )
+        .await?)
+    }
+
     #[tracing::instrument(skip(self), err)]
     async fn delete_object(&self, key: &str) -> anyhow::Result<()> {
-        if macro_aws_config::is_local_aws() {
+        if macro_aws_config::is_local_document_fixture() {
             return Ok(());
         }
         self.client
@@ -87,7 +97,7 @@ impl PresignedUploadUrlPort for S3UploadUrlAdapter {
 
     #[tracing::instrument(skip(self), err)]
     async fn copy_object(&self, source_key: &str, destination_key: &str) -> anyhow::Result<()> {
-        if macro_aws_config::is_local_aws() {
+        if macro_aws_config::is_local_document_fixture() {
             return Ok(());
         }
 
@@ -137,7 +147,7 @@ impl PresignedUploadUrlPort for S3UploadUrlAdapter {
 
     #[tracing::instrument(skip(self, bytes), err)]
     async fn upload_snapshot(&self, document_id: &str, bytes: Vec<u8>) -> anyhow::Result<()> {
-        if macro_aws_config::is_local_aws() {
+        if macro_aws_config::is_local_document_fixture() {
             return Ok(());
         }
 

@@ -438,7 +438,13 @@ impl<
         )
     }
 
-    fn make_presigned_url(&self, key: &str) -> anyhow::Result<String> {
+    async fn make_presigned_url(&self, key: &str) -> anyhow::Result<String> {
+        if macro_aws_config::has_document_store() {
+            return self
+                .upload_url_service
+                .document_download_url(key, self.cloudfront_config.presigned_url_expiry_seconds)
+                .await;
+        }
         let constructed_url = self.cloudfront_url_for_key(key);
         let options = self.get_signed_options();
 
@@ -471,7 +477,7 @@ impl<
         let document_key =
             build_cloud_storage_bucket_document_key(owner, document_id, document_version_id);
 
-        let signed_url = self.make_presigned_url(&document_key)?;
+        let signed_url = self.make_presigned_url(&document_key).await?;
         Ok(LocationResponseData::PresignedUrl(signed_url))
     }
 
@@ -490,7 +496,7 @@ impl<
         let document_key =
             build_cloud_storage_bucket_document_key(owner, document_id, document_version_id);
 
-        let signed_url = self.make_presigned_url(&document_key)?;
+        let signed_url = self.make_presigned_url(&document_key).await?;
         Ok(LocationResponseData::PresignedUrl(signed_url))
     }
 
@@ -501,7 +507,7 @@ impl<
     ) -> anyhow::Result<LocationResponseData> {
         let document_key = build_docx_to_pdf_converted_document_key(owner, document_id);
 
-        let signed_url = self.make_presigned_url(&document_key)?;
+        let signed_url = self.make_presigned_url(&document_key).await?;
         Ok(LocationResponseData::PresignedUrl(signed_url))
     }
 
@@ -522,6 +528,16 @@ impl<
                 .map_err(Into::into)?
         };
 
+        if macro_aws_config::has_document_store() {
+            let mut urls = Vec::with_capacity(shas.len());
+            for sha in shas {
+                urls.push(PresignedUrl {
+                    presigned_url: self.make_presigned_url(&sha).await?,
+                    sha,
+                });
+            }
+            return Ok(LocationResponseData::PresignedUrls(urls));
+        }
         let options = self.get_signed_options();
         let distribution_url = &self.cloudfront_config.distribution_url;
 

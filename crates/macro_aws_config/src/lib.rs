@@ -64,6 +64,101 @@ pub async fn s3_client() -> aws_sdk_s3::Client {
     aws_sdk_s3::Client::from_conf(s3_config)
 }
 
+/// Build the client used by document storage, preserving the default workspace
+/// configuration unless a dedicated signing profile and endpoints are supplied.
+#[cfg(feature = "s3")]
+pub async fn document_s3_client() -> std::io::Result<aws_sdk_s3::Client> {
+    use std::env::{VarError, var};
+    use std::io::{Error, ErrorKind};
+    let (profile, internal, public) = match (
+        var("MACRO_DOCUMENT_S3_PROFILE"),
+        var("MACRO_DOCUMENT_S3_ENDPOINT"),
+        var("MACRO_DOCUMENT_S3_PUBLIC_URL"),
+    ) {
+        (Err(VarError::NotPresent), Err(VarError::NotPresent), Err(VarError::NotPresent)) => {
+            return Ok(s3_client().await);
+        }
+        (Ok(profile), Ok(internal), Ok(public)) => (profile, internal, public),
+        _ => {
+            return Err(Error::new(
+                ErrorKind::InvalidInput,
+                "document storage needs a profile and both endpoints",
+            ));
+        }
+    };
+    for (endpoint, external) in [(&internal, false), (&public, true)] {
+        let valid = url::Url::parse(endpoint).is_ok_and(|u| {
+            u.host().is_some()
+                && u.username().is_empty()
+                && u.password().is_none()
+                && u.query().is_none()
+                && u.fragment().is_none()
+                && (u.scheme() == "https" || (!external && u.scheme() == "http"))
+                && (external || u.path() == "/")
+        });
+        if !valid {
+            return Err(Error::new(
+                ErrorKind::InvalidInput,
+                "invalid document storage endpoint",
+            ));
+        }
+    }
+    let sdk = named_profile_sdk_config(&profile).await?;
+    let config = aws_sdk_s3::config::Builder::from(&sdk)
+        .endpoint_url(internal.trim_end_matches('/'))
+        .force_path_style(true)
+        .build();
+    Ok(aws_sdk_s3::Client::from_conf(config))
+}
+
+/// Whether this service uses a dedicated document object store for download grants.
+pub fn has_document_store() -> bool {
+    std::env::var_os("MACRO_DOCUMENT_S3_PROFILE").is_some()
+}
+
+/// Sign a read for one object after its caller has authorized the document.
+#[cfg(feature = "s3")]
+pub async fn document_download_url(
+    client: &aws_sdk_s3::Client,
+    bucket: &str,
+    key: &str,
+    seconds: u64,
+) -> Result<String, aws_sdk_s3::error::SdkError<aws_sdk_s3::operation::get_object::GetObjectError>>
+{
+    use aws_sdk_s3::presigning::PresigningConfig;
+    let signing = PresigningConfig::expires_in(std::time::Duration::from_secs(seconds))
+        .map_err(aws_sdk_s3::error::SdkError::construction_failure)?;
+    let request = client
+        .get_object()
+        .bucket(bucket)
+        .key(key)
+        .presigned(signing)
+        .await?;
+    Ok(transform_aws_url(request.uri()))
+}
+
+/// Whether local development uses its document-storage fixture.
+pub fn is_local_document_fixture() -> bool {
+    is_local_aws() && !has_document_store()
+}
+
+fn replace_storage_prefix(url: &str, from: &str, to: &str) -> Option<String> {
+    let tail = url
+        .strip_prefix(from.trim_end_matches('/'))?
+        .strip_prefix('/')?;
+    Some(format!("{}/{tail}", to.trim_end_matches('/')))
+}
+
+fn document_storage_url(url: &str, internal: bool) -> Option<String> {
+    let service = std::env::var("MACRO_DOCUMENT_S3_ENDPOINT").ok()?;
+    let browser = std::env::var("MACRO_DOCUMENT_S3_PUBLIC_URL").ok()?;
+    if internal {
+        replace_storage_prefix(url, &browser, &service)
+    } else {
+        replace_storage_prefix(url, &service, &browser)
+    }
+}
+
 /// Creates an SQS client
 #[cfg(feature = "sqs")]
 pub async fn sqs_client() -> aws_sdk_sqs::Client {
@@ -138,6 +233,9 @@ fn transform_local_url(url: &str, public_url: Option<&str>) -> String {
 /// `LOCAL_AWS_PUBLIC_URL`, when set by the local stack, supplies the browser-facing
 /// endpoint so named instances can use their HTTPS storage proxy.
 pub fn transform_aws_url(url: &str) -> String {
+    if let Some(mapped) = document_storage_url(url, false) {
+        return mapped;
+    }
     if is_local_aws() {
         let public_url = LocalAwsPublicUrl::new();
         return transform_local_url(url, public_url.as_ref().map(|url| url.as_ref()));
@@ -181,6 +279,9 @@ fn transform_internal_url(url: &str, local_aws_url: &str, public_url: Option<&st
 /// origin and proxy prefix so container clients reach LocalStack directly.
 /// Legacy localhost URLs are also supported. No-op outside local AWS.
 pub fn transform_aws_url_for_internal_fetch(url: &str) -> String {
+    if let Some(mapped) = document_storage_url(url, true) {
+        return mapped;
+    }
     if let Some(local_aws_url) = LocalAwsUrl::new() {
         let public_url = LocalAwsPublicUrl::new();
         return transform_internal_url(

@@ -128,6 +128,19 @@ async fn sign_document_key(
         }
     }
 
+    if macro_aws_config::has_document_store() {
+        let url = state
+            .s3_client
+            .document_download_url(
+                key,
+                state
+                    .config
+                    .document_storage_service_presigned_url_expiry_seconds,
+            )
+            .await?;
+        return Ok(LocationResponseData::PresignedUrl(url));
+    }
+
     let signed_options = get_cloudfront_signed_options(
         &state
             .config
@@ -218,6 +231,26 @@ async fn get_docx_urls(
         .await?
     };
     tracing::debug!(elapsed = ?start_shas.elapsed(), "got document shas");
+
+    if macro_aws_config::has_document_store() {
+        let mut urls = Vec::with_capacity(shas.len());
+        for sha in shas {
+            let url = state
+                .s3_client
+                .document_download_url(
+                    &sha,
+                    state
+                        .config
+                        .document_storage_service_presigned_url_expiry_seconds,
+                )
+                .await?;
+            urls.push(PresignedUrl {
+                presigned_url: url,
+                sha,
+            });
+        }
+        return Ok(LocationResponseData::PresignedUrls(urls));
+    }
 
     let signed_options = get_cloudfront_signed_options(
         &state

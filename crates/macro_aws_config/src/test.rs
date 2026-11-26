@@ -216,3 +216,24 @@ fn test_transform_leaves_an_endpoint_by_address_alone() {
         input
     );
 }
+
+#[test]
+fn named_storage_preserves_signed_path_and_query_in_both_directions() {
+    let service = "http://documents:7070";
+    let public = "https://macro.example/objects";
+    let suffix = "/doc-storage/macro%7Cu%40example/doc/1?checksum=a%2Fb%3D";
+    let source = format!("{service}{suffix}");
+    let target = format!("{public}{suffix}");
+    assert_eq!(
+        replace_storage_prefix(&source, service, public),
+        Some(target.clone())
+    );
+    assert_eq!(
+        replace_storage_prefix(&target, public, service),
+        Some(source)
+    );
+    assert_eq!(
+        replace_storage_prefix("https://macro.example/objects-other/key", public, service),
+        None
+    );
+}

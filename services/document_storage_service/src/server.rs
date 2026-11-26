@@ -295,7 +295,7 @@ async fn run_server() -> anyhow::Result<()> {
     );
     tracing::trace!("initialized dynamodb client");
 
-    let s3_client = macro_aws_config::s3_client().await;
+    let document_s3 = macro_aws_config::document_s3_client().await?;
 
     tracing::trace!("initialized s3 client");
 
@@ -611,7 +611,7 @@ async fn run_server() -> anyhow::Result<()> {
     );
 
     let s3 = Arc::new(S3::new(
-        s3_client,
+        document_s3.clone(),
         config.document_storage_bucket.as_ref(),
         config.docx_document_upload_bucket.as_ref(),
         config.upload_staging_bucket.as_ref(),
@@ -639,7 +639,7 @@ async fn run_server() -> anyhow::Result<()> {
             .document_storage_service_presigned_url_browser_cache_expiry_seconds,
     };
     let s3_upload_adapter = S3UploadUrlAdapter::new(
-        macro_aws_config::s3_client().await,
+        document_s3.clone(),
         config.document_storage_bucket.as_ref(),
         config.docx_document_upload_bucket.as_ref(),
     );
@@ -689,7 +689,7 @@ async fn run_server() -> anyhow::Result<()> {
     let project_service = Arc::new(ProjectServiceImpl::new(
         PgProjectRepo::new(db.clone(), owned_entity_registrar.clone()),
         S3ProjectUploadAdapter::new(
-            macro_aws_config::s3_client().await,
+            document_s3.clone(),
             config.document_storage_bucket.as_ref(),
             config.docx_document_upload_bucket.as_ref(),
             config.upload_staging_bucket.as_ref(),
@@ -1856,7 +1856,7 @@ async fn run_server() -> anyhow::Result<()> {
     let document_files = Arc::new(
         documents_hex::outbound::s3_document_files::S3DocumentFiles::new(
             db.clone(),
-            macro_aws_config::s3_client().await,
+            document_s3.clone(),
             config.document_storage_bucket.to_string(),
         ),
     );
@@ -1917,7 +1917,7 @@ async fn run_server() -> anyhow::Result<()> {
             slack_limits,
         ),
         slack_integration::outbound::s3_storage::S3ImportStorage::new(
-            macro_aws_config::s3_client().await,
+            document_s3.clone(),
             config.upload_staging_bucket.as_ref().to_owned(),
             slack_limits,
         )

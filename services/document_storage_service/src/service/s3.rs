@@ -59,6 +59,16 @@ impl S3Client {
         &self.docx_upload_bucket
     }
 
+    pub async fn document_download_url(&self, key: &str, seconds: u64) -> anyhow::Result<String> {
+        Ok(macro_aws_config::document_download_url(
+            &self.inner,
+            &self.document_storage_bucket,
+            key,
+            seconds,
+        )
+        .await?)
+    }
+
     pub async fn get_document(&self, key: &str) -> anyhow::Result<Vec<u8>> {
         get::get(&self.inner, &self.document_storage_bucket, key).await
     }

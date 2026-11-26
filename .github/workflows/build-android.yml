@@ -1,7 +1,7 @@
-name: Build Studio3000 Android pilot
+name: Build Studio3000 Android release bundle
 on:
   push:
-    branches: [codex/android-build]
+    branches: [codex/android-release]
 permissions:
   contents: read
 jobs:
@@ -25,28 +25,35 @@ jobs:
           echo "NDK_HOME=$ANDROID_HOME/ndk/30.0.16248370" >> "$GITHUB_ENV"
       - uses: ./.github/actions/setup-nix
       - uses: ./.github/actions/setup-reqs-web
-      - name: Test Android configuration and compile the ARM64 debug client
+      - name: Build release bundle for offline signing
         working-directory: apps/web
+        env:
+          FIREBASE_CLIENT: ${{ secrets.MACRO_ANDROID_FIREBASE_CLIENT }}
         run: |
           set -euo pipefail
+          umask 077
           unset BASH_ENV
           export RUSTC_WRAPPER=""
-          bunx --no-install vitest run scripts/android-firebase.test.ts scripts/android-play-status.test.ts
-          args=(--apk)
-          if [[ "$(cargo tauri android build --help)" == *'--apk <APK>'* ]]; then
-            args=(--apk true --aab false)
+          printf '%s' "$FIREBASE_CLIENT" > "$RUNNER_TEMP/google-services.json"
+          unset FIREBASE_CLIENT
+          android=tauri/src-tauri/gen/android
+          ephemeral=$(openssl rand -hex 28)
+          keytool -genkeypair -keystore "$RUNNER_TEMP/temporary.p12" -alias temporary -storepass "$ephemeral" -keypass "$ephemeral" -keyalg RSA -keysize 2048 -validity 2 -dname CN=Temporary
+          printf 'storeFile=%s\nstorePassword=%s\nkeyPassword=%s\nkeyAlias=temporary\n' "$RUNNER_TEMP/temporary.p12" "$ephemeral" "$ephemeral" > "$android/keystore.properties"
+          args=(--aab)
+          if [[ "$(cargo tauri android build --help)" == *'--aab <AAB>'* ]]; then
+            args=(--apk false --aab true)
           fi
-          just android-build --debug --ci "${args[@]}"
-          mapfile -t apks < <(find tauri/src-tauri/gen/android/app/build/outputs/apk -name '*-debug.apk')
-          [[ ${#apks[@]} == 1 ]]
-          aapt="$ANDROID_HOME/build-tools/36.0.0/aapt"
-          "$aapt" dump badging "${apks[0]}" > "$RUNNER_TEMP/android-badging"
-          grep -F "package: name='ch.studio3000.macro'" "$RUNNER_TEMP/android-badging"
-          "$ANDROID_HOME/build-tools/36.0.0/apksigner" verify "${apks[0]}"
-          cp "${apks[0]}" "$RUNNER_TEMP/studio3000-debug.apk"
+          just android-build --firebase-config "$RUNNER_TEMP/google-services.json" --ci "${args[@]}"
+          mapfile -t bundles < <(find "$android/app/build/outputs/bundle" -name '*.aab')
+          [[ ${#bundles[@]} == 1 ]]
+          cp "${bundles[0]}" "$RUNNER_TEMP/studio3000-unsigned.aab"
+          cd "$RUNNER_TEMP"
+          zip -dq studio3000-unsigned.aab 'META-INF/MANIFEST.MF' 'META-INF/*.SF' 'META-INF/*.RSA'
+          unzip -tq studio3000-unsigned.aab
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
-          name: studio3000-android-debug
-          path: ${{ runner.temp }}/studio3000-debug.apk
+          name: studio3000-android-offline-signing
+          path: ${{ runner.temp }}/studio3000-unsigned.aab
           if-no-files-found: error
           retention-days: 3

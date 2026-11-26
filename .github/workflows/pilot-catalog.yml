@@ -42,12 +42,32 @@ jobs:
               std::fs::write(std::env::var("CATALOG_OUTPUT").unwrap(), serde_json::to_vec_pretty(&output).unwrap()).unwrap();
           }
           RS
+          cat >> tooling/xtask/crates/xtask_local/src/local/local_env/test.rs <<'RS'
+
+          #[test]
+          fn export_studio_pilot_boot_fixtures() {
+              let instance = Instance::derive(None, None).unwrap();
+              let local = LocalEnv::for_instance(Mode::Local, &instance, true, Tunnels::default()).unwrap();
+              // boot_stub_env is the literal synthetic provider fixture map from the pinned source.
+              // Do not export environment variables or credentials from the running process.
+              let mut fixtures = local.boot_stub_env();
+              fixtures.extend(local.to_env().into_iter().filter(|(k, v)| {
+                  (k.starts_with("OVERRIDE_") && v.starts_with("http://"))
+                      || matches!(k.as_str(), "GMAIL_GCP_QUEUE" | "SMTP_HOST" | "SMTP_PORT")
+              }));
+              std::fs::write(std::env::var("FIXTURE_OUTPUT").unwrap(),
+                             serde_json::to_vec_pretty(&fixtures).unwrap()).unwrap();
+          }
+          RS
+          export FIXTURE_OUTPUT="$RUNNER_TEMP/boot-fixtures.json"
           export CARGO_PROFILE_TEST_DEBUG=0 CARGO_INCREMENTAL=0 CATALOG_OUTPUT="$RUNNER_TEMP/resources.json"
-          cargo test --locked -p xtask_local export_studio_pilot_catalog
+          cargo test --locked -p xtask_local export_studio_pilot_
           test -s "$CATALOG_OUTPUT"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: studio-pilot-resources
-          path: ${{ runner.temp }}/resources.json
+          path: |
+            ${{ runner.temp }}/resources.json
+            ${{ runner.temp }}/boot-fixtures.json
           if-no-files-found: error
           retention-days: 3

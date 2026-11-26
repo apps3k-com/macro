@@ -10,12 +10,14 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 120
     env:
-      SOURCE_COMMIT: 8a87ac087d0502a3e01ba87850c6caa280a943d1
+      SOURCE_COMMIT: efbfda28309398fc18ecc266c621938bc258b19f
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
         with:
           ref: ${{ env.SOURCE_COMMIT }}
           persist-credentials: false
+      - name: Free space on the disposable Linux runner
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
       - name: Build Linux image
         run: |
           set -eu

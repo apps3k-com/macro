@@ -1,0 +1,106 @@
+name: Build Studio3000 iOS simulator pilot
+on:
+  push:
+    branches: [codex/ios-build]
+permissions:
+  contents: read
+jobs:
+  simulator:
+    runs-on: macos-26
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: 6e462e766708a0d5dd16bca56e8b4a3f1839e253
+          persist-credentials: false
+      - name: Install Nix
+        run: |
+          set -euo pipefail
+          if ! command -v nix >/dev/null 2>&1; then
+            curl --http1.1 --retry 5 --retry-delay 5 --retry-all-errors \
+              --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | \
+              sh -s -- install macos --no-confirm \
+              --extra-conf "experimental-features = nix-command flakes" \
+              --extra-conf "sandbox = false" \
+              --extra-conf "trusted-users = root runner"
+          fi
+          echo "/nix/var/nix/profiles/default/bin" >> "$GITHUB_PATH"
+          echo "NIX_REMOTE=daemon" >> "$GITHUB_ENV"
+          export PATH="/nix/var/nix/profiles/default/bin:$PATH"
+          export NIX_REMOTE=daemon
+          nix --version
+        shell: bash
+      - name: Compile unsigned iOS simulator application
+        run: |
+          set -euo pipefail
+          xcodebuild -version
+          xcrun --sdk iphonesimulator --show-sdk-version
+          MACRO_DEVELOPER_DIR="$(xcode-select -p)"
+          export MACRO_DEVELOPER_DIR
+
+          # cargo-tauri, bun, just, wasm-pack and the pinned toolchain (which carries
+          # aarch64-apple-ios-sim, see rust-toolchain.toml) all come from the dev shell.
+          # Phase 1 — the web and wasm build, in the dev shell exactly as it comes. It
+          # needs nix's bun, wasm-pack and cc wrapper, and must not see Apple's.
+          nix develop --command bash -euo pipefail -c '
+            bun install --frozen-lockfile
+            cd apps/web
+            just build-tauri
+          '
+
+          # Phase 2 — everything Xcode drives, with Apple's toolchain in front.
+          #
+          # The dev shell ships its own: DEVELOPER_DIR points at nix's apple-sdk and
+          # `xcodebuild` is the xcbuild reimplementation, which rejects real flags. But
+          # swapping only those two desyncs nix's cc wrapper from its SDK and host
+          # proc-macro links then fail on -liconv, so the compiler and linker have to
+          # come from Apple too. Hence one dir at the front of PATH rather than a couple
+          # of overrides — and hence phase 1 being a separate shell, since the wasm build
+          # wants the nix cc it was configured against.
+          nix develop --command bash -euo pipefail -c '
+            echo "before: DEVELOPER_DIR=$(xcode-select -p 2>&1), xcodebuild=$(command -v xcodebuild || echo none)"
+
+            export DEVELOPER_DIR="$MACRO_DEVELOPER_DIR"
+            APPLE_TOOLS="$(mktemp -d)"
+            for tool in xcodebuild xcrun xcode-select simctl actool ibtool plutil ditto \
+                        clang clang++ cc c++ ld ar ranlib libtool lipo strip nm \
+                        install_name_tool codesign dsymutil; do
+              [ -x "/usr/bin/$tool" ] && ln -sf "/usr/bin/$tool" "$APPLE_TOOLS/$tool"
+            done
+            export PATH="$APPLE_TOOLS:$PATH"
+
+            # nix'"'"'s wrapper flags name its own sysroot; Apple'"'"'s clang would either
+            # ignore them or trip over them.
+            unset NIX_CFLAGS_COMPILE NIX_LDFLAGS SDKROOT || true
+
+            echo "after:  DEVELOPER_DIR=$(xcode-select -p 2>&1), xcodebuild=$(command -v xcodebuild), cc=$(command -v cc)"
+            xcodebuild -version
+
+            cd apps/web
+            # Positional: `prebuilt=true` would be passed as the literal argument
+            # "prebuilt=true", silently rebuilding the frontend a second time here.
+            #
+            # Xcode cuts long lines from the Rust build phase, so a failed link reaches
+            # the job log without the linker'"'"'s own error after rustc'"'"'s long command
+            # line. Keep the whole build log and Xcode'"'"'s activity logs as artifacts.
+            mkdir -p ../../artifacts
+            if ! just ios-build-sim true 2>&1 | tee ../../artifacts/ios-build.log; then
+              echo "--- linker and compiler errors ---" >&2
+              grep -E "ld: |Undefined symbols|library not found|framework not found|error:" \
+                ../../artifacts/ios-build.log | cut -c1-2000 | tail -40 >&2 || true
+              find "$HOME/Library/Developer/Xcode/DerivedData" -name "*.xcactivitylog" \
+                -exec cp {} ../../artifacts/ \; 2>/dev/null || true
+              exit 1
+            fi
+          '
+
+          app="apps/web/tauri/src-tauri/gen/apple/build/arm64-sim/macro.app"
+          test -s "$app/Info.plist"
+          test "$(/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' "$app/Info.plist")" = ch.studio3000.macro
+          ditto -c -k --keepParent "$app" "$RUNNER_TEMP/macro-simulator.zip"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: studio3000-ios-simulator
+          path: ${{ runner.temp }}/macro-simulator.zip
+          if-no-files-found: error
+          retention-days: 3
